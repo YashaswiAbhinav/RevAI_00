@@ -31,6 +31,7 @@ export default function ConnectionsPage() {
     missing_params: 'Google returned an incomplete callback. Please try again.',
     user_not_found: 'Your session could not be matched to a local user.',
     token_exchange_failed: 'Google authorization succeeded, but token exchange failed.',
+    youtube_api_not_enabled: 'Google sign-in worked, but YouTube Data API v3 is not enabled for this Google Cloud project yet.',
     no_youtube_channel: 'This Google account does not appear to have a YouTube channel available for this app.',
     insufficient_permissions: 'The app received a token, but YouTube permissions were not sufficient.',
     connection_failed: 'YouTube connection failed after the callback. Check the server log for details.',

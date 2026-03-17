@@ -10,7 +10,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { connectionId, contentId, isMonitored } = await request.json()
+    const { connectionId, contentId, title, isMonitored } = await request.json()
 
     if (!connectionId || !contentId) {
       return NextResponse.json(
@@ -24,7 +24,6 @@ export async function POST(request: NextRequest) {
       where: {
         id: connectionId,
         userId: session.user.id,
-        status: 'connected',
       },
     })
 
@@ -33,30 +32,40 @@ export async function POST(request: NextRequest) {
     }
 
     if (isMonitored) {
-      // Start monitoring - create record
+      // Start monitoring - create or reactivate record
       await prisma.monitoredContent.upsert({
         where: {
-          connectionId_contentId: {
-            connectionId,
-            contentId,
+          userId_platform_platformContentId: {
+            userId: session.user.id,
+            platform: connection.platform,
+            platformContentId: contentId,
           },
         },
         update: {
+          title: title || null,
+          isMonitored: true,
           updatedAt: new Date(),
         },
         create: {
-          connectionId,
-          contentId,
+          userId: session.user.id,
           platform: connection.platform,
+          platformContentId: contentId,
+          title: title || null,
+          isMonitored: true,
         },
       })
     } else {
-      // Stop monitoring - delete record
-      await prisma.monitoredContent.deleteMany({
+      // Stop monitoring - keep record but disable it
+      await prisma.monitoredContent.updateMany({
         where: {
-          connectionId,
-          contentId,
+          userId: session.user.id,
+          platform: connection.platform,
+          platformContentId: contentId,
         },
+        data: {
+          isMonitored: false,
+          updatedAt: new Date(),
+        }
       })
     }
 

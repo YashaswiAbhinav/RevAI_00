@@ -100,6 +100,14 @@ export async function GET(request: NextRequest) {
     console.error('YouTube callback error:', error)
 
     const message = String(error?.message || '')
+    const errors = Array.isArray(error?.errors) ? error.errors : []
+    const hasAccessNotConfigured = errors.some(
+      (item: any) => item?.reason === 'accessNotConfigured'
+    )
+
+    if (hasAccessNotConfigured || message.includes('YouTube Data API v3 has not been used')) {
+      return redirectWithError(request, 'youtube_api_not_enabled')
+    }
 
     if (message.includes('No channel found')) {
       return redirectWithError(request, 'no_youtube_channel')

@@ -25,7 +25,6 @@ export async function GET(request: NextRequest) {
       where: {
         id: connectionId,
         userId: session.user.id,
-        status: 'connected',
       },
     })
 
@@ -33,17 +32,19 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Connection not found' }, { status: 404 })
     }
 
-    // Get monitored content IDs for this connection
+    // Get monitored content IDs for this connection's platform
     const monitoredContent = await prisma.monitoredContent.findMany({
       where: {
-        connectionId: connectionId,
+        userId: session.user.id,
+        platform: connection.platform,
+        isMonitored: true,
       },
       select: {
-        contentId: true,
+        platformContentId: true,
       },
     })
 
-    const monitoredIds = new Set(monitoredContent.map(mc => mc.contentId))
+    const monitoredIds = new Set(monitoredContent.map(mc => mc.platformContentId))
 
     let content: any[] = []
 
@@ -51,9 +52,16 @@ export async function GET(request: NextRequest) {
       // Decrypt the access token
       const accessToken = decryptToken(connection.accessToken)
 
-      if (connection.platform === 'youtube') {
+      if (!connection.channelId) {
+        return NextResponse.json(
+          { error: 'Connection is missing platform channel/account ID' },
+          { status: 400 }
+        )
+      }
+
+      if (connection.platform === 'YOUTUBE') {
         content = await getYouTubeContent(accessToken, connection.channelId)
-      } else if (connection.platform === 'instagram') {
+      } else if (connection.platform === 'INSTAGRAM') {
         content = await getInstagramContent(accessToken, connection.channelId)
       }
 

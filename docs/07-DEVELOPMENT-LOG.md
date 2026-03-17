@@ -223,6 +223,33 @@
 - **Reason**: OAuth callback failures were reaching the app but not exposing the underlying reason to the user.
 - **Impact**: Follow-up debugging can now distinguish between token exchange failures, missing YouTube channels, permission issues, and generic callback errors.
 
+### 2026-03-17 04:05 PM
+
+- **Audit**: Compared Phase 6 docs against the actual codebase to identify remaining mocked integrations.
+- **Findings**: Real mocks still exist in `airflow/dags/fetch_comments_dag.py`, `airflow/dags/process_replies_dag.py`, `airflow/dags/post_replies_dag.py`, `app/api/reports/route.ts`, and `app/api/comments/generate-reply/route.ts`.
+- **Next Priority**: Implement the end-to-end YouTube path first: real comment fetch, real Gemini classification/reply generation, and real reply posting. Keep Instagram and reports as secondary work unless demo scope requires them immediately.
+
+### 2026-03-17 04:18 PM
+
+- **Fix**: Reworked content selection APIs to match the current Prisma schema instead of the older `connectionId/contentId/status` model.
+- **Files Changed**:
+  - `app/api/content/route.ts`
+  - `app/api/content/monitor/route.ts`
+  - `app/dashboard/content/page.tsx`
+- **Impact**: Connected platform accounts can now fetch available content and persist monitoring state using `userId + platform + platformContentId`, which unblocks the real "Connect -> Select content" flow for YouTube.
+
+### 2026-03-17 04:24 PM
+
+- **Issue Reconfirmed**: YouTube OAuth is still intermittently blocked by Google with `redirect_uri_mismatch`.
+- **Reason**: This happens before the app callback executes, so the remaining fix is in Google Cloud Console configuration, not application code.
+- **Next Check**: Verify the exact OAuth client ID in use (`744027749722-559ttf0i1hkfa1cbhnq97idun98lvcff.apps.googleusercontent.com`) has `http://localhost:3000/api/connections/youtube/callback` registered under Authorized redirect URIs in the same Google Cloud project.
+
+### 2026-03-17 04:50 PM
+
+- **Issue Identified**: YouTube OAuth callback is now reaching the app, but the connection fails because `YouTube Data API v3` is disabled for the Google Cloud project behind the OAuth client.
+- **Solution**: Added a specific callback error mapping and UI message for `accessNotConfigured` / API-disabled responses.
+- **Impact**: The app can now distinguish Google Console setup issues from application callback failures, making the next user action explicit: enable YouTube Data API v3 and retry after propagation.
+
 ---
 
 ## 🔄 How to Update This Log

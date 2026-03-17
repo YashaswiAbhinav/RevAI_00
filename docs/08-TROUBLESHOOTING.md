@@ -241,7 +241,35 @@ npm run dev
   - `no_youtube_channel`
   - `token_exchange_failed`
   - `insufficient_permissions`
+- `youtube_api_not_enabled`
 - If needed, inspect the server log for `YouTube callback error:` output.
+
+---
+
+### "YouTube Data API v3 has not been used in project ... or it is disabled"
+
+**Error**:
+```text
+YouTube Data API v3 has not been used in project ... before or it is disabled
+```
+
+**Why it happens**:
+
+Google OAuth can succeed, but the next call to `youtube.channels.list` will still fail if `YouTube Data API v3` is not enabled in the same Google Cloud project as the OAuth client.
+
+**Fix**:
+
+1. Open:
+```text
+https://console.developers.google.com/apis/api/youtube.googleapis.com/overview?project=744027749722
+```
+2. Enable `YouTube Data API v3`
+3. Wait a few minutes for propagation
+4. Retry the YouTube connection flow
+
+**Important**:
+
+The API must be enabled in the same project that owns the OAuth client ID used in `.env.local`.
 
 ---
 

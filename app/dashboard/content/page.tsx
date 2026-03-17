@@ -79,7 +79,7 @@ export default function ContentPage() {
     }
   }
 
-  const toggleMonitoring = async (contentId: string, currentlyMonitored: boolean) => {
+  const toggleMonitoring = async (item: ContentItem) => {
     setSaving(true)
     try {
       const response = await fetch('/api/content/monitor', {
@@ -89,17 +89,18 @@ export default function ContentPage() {
         },
         body: JSON.stringify({
           connectionId: selectedConnection,
-          contentId,
-          isMonitored: !currentlyMonitored,
+          contentId: item.id,
+          title: item.title,
+          isMonitored: !item.isMonitored,
         }),
       })
 
       if (response.ok) {
         // Update local state
-        setContent(prev => prev.map(item =>
-          item.id === contentId
-            ? { ...item, isMonitored: !currentlyMonitored }
-            : item
+        setContent(prev => prev.map(existingItem =>
+          existingItem.id === item.id
+            ? { ...existingItem, isMonitored: !item.isMonitored }
+            : existingItem
         ))
       }
     } catch (error) {
@@ -198,7 +199,7 @@ export default function ContentPage() {
                       </span>
 
                       <button
-                        onClick={() => toggleMonitoring(item.id, item.isMonitored)}
+                        onClick={() => toggleMonitoring(item)}
                         disabled={saving}
                         className={`px-4 py-2 text-sm font-medium rounded-md ${
                           item.isMonitored
