@@ -6,14 +6,13 @@
 [![Airflow](https://img.shields.io/badge/Apache%20Airflow-2.8-orange)](https://airflow.apache.org/)
 [![Gemini AI](https://img.shields.io/badge/Gemini%20AI-1.0-purple)](https://ai.google.dev/)
 
-An intelligent social media automation platform that uses AI to monitor, analyze, and respond to comments on YouTube, Instagram, and Facebook. Built with Next.js 14, Apache Airflow, and Google Gemini AI.
+An intelligent social media automation platform that uses AI to monitor, analyze, and respond to comments on YouTube, Instagram, and Facebook. Built with Next.js 14, Apache Airflow.
 
 ## 🎯 What RevAI Does
 
 RevAI automates customer engagement across social media platforms by:
 
 - **Monitoring Comments**: Automatically fetches comments from your connected social media accounts
-- **AI-Powered Analysis**: Uses Google Gemini AI to classify comments (questions, complaints, spam, etc.)
 - **Smart Reply Generation**: Generates contextual, business-appropriate responses
 - **Automated Posting**: Posts approved replies back to platforms with rate limiting
 - **Analytics & Reports**: Provides insights on engagement trends and sentiment analysis
@@ -22,7 +21,6 @@ RevAI automates customer engagement across social media platforms by:
 
 - 🔐 **Secure Authentication**: NextAuth.js with Google OAuth and credentials
 - 📊 **Multi-Platform Support**: YouTube, Instagram, and Facebook integration
-- 🤖 **AI-Powered Responses**: Gemini AI for intelligent comment classification and reply generation
 - ⚡ **Real-time Automation**: Apache Airflow orchestrates the entire comment processing pipeline
 - 🛡️ **Enterprise Security**: AES-256 encryption for API tokens, secure database connections
 - 📈 **Analytics Dashboard**: Comprehensive reports on engagement metrics and trends
@@ -464,7 +462,6 @@ This project is developed as part of an academic coursework assignment.
 
 ## 🙏 Acknowledgments
 
-- **Google Gemini AI** for intelligent comment analysis
 - **Apache Airflow** for workflow orchestration
 - **Next.js** for the excellent React framework
 - **Prisma** for database tooling
