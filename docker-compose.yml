@@ -1,0 +1,141 @@
+version: '3.8'
+
+services:
+  revai-postgres:
+    image: postgres:14
+    environment:
+      POSTGRES_USER: revai
+      POSTGRES_PASSWORD: revai123
+      POSTGRES_DB: revai
+    volumes:
+      - revai_postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"  # RevAI database on standard PostgreSQL port
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U revai"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  airflow-postgres:
+    image: postgres:14
+    environment:
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow
+      POSTGRES_DB: airflow
+    volumes:
+      - airflow_postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"  # Different port to avoid conflict with RevAI DB
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U airflow"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  airflow-init:
+    image: apache/airflow:2.8.0
+    depends_on:
+      airflow-postgres:
+        condition: service_healthy
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@airflow-postgres/airflow
+      AIRFLOW__CORE__FERNET_KEY: ${AIRFLOW__CORE__FERNET_KEY:-}
+      AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
+      AIRFLOW__WEBserver__RBAC: 'true'
+      _AIRFLOW_DB_UPGRADE: 'true'
+      _AIRFLOW_WWW_USER_CREATE: 'true'
+      _AIRFLOW_WWW_USER_USERNAME: admin
+      _AIRFLOW_WWW_USER_PASSWORD: admin
+    volumes:
+      - ./airflow/dags:/opt/airflow/dags
+      - ./airflow/tasks:/opt/airflow/tasks
+      - ./airflow/config:/opt/airflow/config
+      - ./airflow/requirements.txt:/opt/airflow/requirements.txt
+      - ./.env.local:/opt/airflow/.env
+    command: >
+      bash -c "
+      pip install -q -r /opt/airflow/requirements.txt &&
+      airflow db migrate &&
+      airflow users create --username admin --password admin --firstname Admin --lastname User --role Admin --email admin@example.com || true
+      "
+
+  airflow-webserver:
+    image: apache/airflow:2.8.0
+    depends_on:
+      airflow-init:
+        condition: service_completed_successfully
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@airflow-postgres/airflow
+      AIRFLOW__CORE__FERNET_KEY: ${AIRFLOW__CORE__FERNET_KEY:-}
+      AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
+      AIRFLOW__WEBserver__RBAC: 'true'
+      # RevAI environment variables
+      DATABASE_URL: ${DATABASE_URL}
+      FIREBASE_PROJECT_ID: ${FIREBASE_PROJECT_ID}
+      FIREBASE_CLIENT_EMAIL: ${FIREBASE_CLIENT_EMAIL}
+      FIREBASE_PRIVATE_KEY: ${FIREBASE_PRIVATE_KEY}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY}
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+      META_APP_ID: ${META_APP_ID}
+      META_APP_SECRET: ${META_APP_SECRET}
+    volumes:
+      - ./airflow/dags:/opt/airflow/dags
+      - ./airflow/tasks:/opt/airflow/tasks
+      - ./airflow/config:/opt/airflow/config
+      - ./airflow/requirements.txt:/opt/airflow/requirements.txt
+      - ./.env.local:/opt/airflow/.env
+    ports:
+      - "8080:8080"
+    command: >
+      bash -c "
+      pip install -q -r /opt/airflow/requirements.txt &&
+      airflow webserver
+      "
+    healthcheck:
+      test: ["CMD-SHELL", "curl --fail http://localhost:8080/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  airflow-scheduler:
+    image: apache/airflow:2.8.0
+    depends_on:
+      airflow-init:
+        condition: service_completed_successfully
+    environment:
+      AIRFLOW__CORE__EXECUTOR: LocalExecutor
+      AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@airflow-postgres/airflow
+      AIRFLOW__CORE__FERNET_KEY: ${AIRFLOW__CORE__FERNET_KEY:-}
+      AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
+      AIRFLOW__WEBserver__RBAC: 'true'
+      # RevAI environment variables
+      DATABASE_URL: ${DATABASE_URL}
+      FIREBASE_PROJECT_ID: ${FIREBASE_PROJECT_ID}
+      FIREBASE_CLIENT_EMAIL: ${FIREBASE_CLIENT_EMAIL}
+      FIREBASE_PRIVATE_KEY: ${FIREBASE_PRIVATE_KEY}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY}
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+      META_APP_ID: ${META_APP_ID}
+      META_APP_SECRET: ${META_APP_SECRET}
+    volumes:
+      - ./airflow/dags:/opt/airflow/dags
+      - ./airflow/tasks:/opt/airflow/tasks
+      - ./airflow/config:/opt/airflow/config
+      - ./airflow/requirements.txt:/opt/airflow/requirements.txt
+      - ./.env.local:/opt/airflow/.env
+    command: >
+      bash -c "
+      pip install -q -r /opt/airflow/requirements.txt &&
+      airflow scheduler
+      "
+
+volumes:
+  revai_postgres_data:
+  airflow_postgres_data:
