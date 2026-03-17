@@ -26,6 +26,11 @@ model User {
   businessContext    String?
   notificationEmail  String?
 
+  // DAG Schedule Settings (minutes)
+  fetchIntervalMinutes   Int?  @default(30)  // fetch_comments_dag interval
+  processIntervalMinutes Int?  @default(60)  // process_replies_dag interval
+  postIntervalMinutes    Int?  @default(15)  // post_replies_dag interval
+
   // Relations
   connections     Connection[]
   monitoredContent MonitoredContent[]

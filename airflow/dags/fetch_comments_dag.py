@@ -11,6 +11,10 @@ from airflow.models import Variable
 import sys
 sys.path.insert(0, '/opt/airflow')
 
+# Read interval from Airflow Variable set by the settings page (default 30 min)
+_fetch_interval = int(Variable.get('revai_fetch_interval_minutes', default_var=30))
+_schedule = f'*/{_fetch_interval} * * * *' if _fetch_interval < 60 else f'0 */{_fetch_interval // 60} * * *'
+
 # Import helper functions
 from tasks.helpers import (
     get_monitored_content,
@@ -40,8 +44,8 @@ default_args = {
 dag = DAG(
     'fetch_comments_dag',
     default_args=default_args,
-    description='Fetch comments from monitored YouTube/Instagram content every 30 minutes',
-    schedule_interval='*/30 * * * *',  # Every 30 minutes
+    description='Fetch comments from monitored YouTube/Instagram content',
+    schedule_interval=_schedule,
     catchup=False,
     tags=['revai', 'comments', 'fetch'],
 )

@@ -9,8 +9,13 @@ import time
 import random
 from airflow import DAG
 from airflow.operators.python import PythonOperator
+from airflow.models import Variable
 import sys
 sys.path.insert(0, '/opt/airflow')
+
+# Read interval from Airflow Variable set by the settings page (default 15 min)
+_post_interval = int(Variable.get('revai_post_interval_minutes', default_var=15))
+_schedule = f'*/{_post_interval} * * * *' if _post_interval < 60 else f'0 */{_post_interval // 60} * * *'
 
 # Import helper functions
 from tasks.helpers import (
@@ -43,8 +48,8 @@ default_args = {
 dag = DAG(
     'post_replies_dag',
     default_args=default_args,
-    description='Post approved replies to YouTube and Instagram every 15 minutes',
-    schedule_interval='*/15 * * * *',  # Every 15 minutes
+    description='Post approved replies to YouTube and Instagram',
+    schedule_interval=_schedule,
     catchup=False,
     tags=['revai', 'comments', 'posting'],
 )

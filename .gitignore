@@ -11,7 +11,7 @@ out/
 .env*.local
 
 # Prisma
-prisma/migrations/
+# prisma/migrations/
 
 # Airflow
 airflow/logs/
@@ -30,9 +30,9 @@ venv/
 dist/
 build/
 
-# Docker
-.docker/
-docker-compose.override.yml
+# # Docker
+# .docker/
+# docker-compose.override.yml
 
 # Database volumes (if any local files)
 *.db
@@ -76,7 +76,7 @@ coverage/
 .nyc_output
 
 # Dependency directories
-jspm_packages/
+# jspm_packages/
 
 # Optional npm cache directory
 .npm
@@ -108,10 +108,10 @@ jspm_packages/
 
 # Nuxt.js build / generate output
 .nuxt
-
+package-lock.json
 # Gatsby files
 .cache/
-public
+# public
 
 # Storybook build outputs
 .out
@@ -122,6 +122,6 @@ tmp/
 temp/
 
 # Firebase service account files
-*.json
-firebase-*.json
-service-account-*.json
+# *.json
+# firebase-*.json
+# service-account-*.json

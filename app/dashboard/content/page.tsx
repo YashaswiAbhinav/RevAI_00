@@ -80,10 +80,21 @@ export default function ContentPage() {
   const fetchContent = async (connectionId: string) => {
     setLoading(true)
     try {
-      const response = await fetch(`/api/content?connectionId=${connectionId}`)
-      if (response.ok) {
-        const data = await response.json()
-        setContent(data.content)
+      const [contentResponse, monitoredResponse] = await Promise.all([
+        fetch(`/api/content?connectionId=${connectionId}`, { cache: 'no-store' }),
+        fetch('/api/content/monitored', { cache: 'no-store' }),
+      ])
+      if (contentResponse.ok) {
+        const data = await contentResponse.json()
+        let items: ContentItem[] = data.content
+        // Sync isMonitored from DB in case API didn't return it correctly
+        if (monitoredResponse.ok) {
+          const monitoredData = await monitoredResponse.json()
+          const monitoredIds = new Set((monitoredData.content as MonitoredItem[]).map(m => m.platformContentId))
+          items = items.map(c => ({ ...c, isMonitored: monitoredIds.has(c.id) }))
+          setMonitoredContent(monitoredData.content)
+        }
+        setContent(items)
       }
     } catch (error) {
       console.error('Failed to fetch content:', error)
@@ -101,14 +112,32 @@ export default function ContentPage() {
     }
   }
 
+  const refreshMonitoredContent = async () => {
+    try {
+      const response = await fetch('/api/content/monitored', { cache: 'no-store' })
+      if (response.ok) {
+        const data = await response.json()
+        const monitored: MonitoredItem[] = data.content
+        setMonitoredContent(monitored)
+        // Sync isMonitored flag on the visible content list from DB truth
+        const monitoredIds = new Set(monitored.map((m) => m.platformContentId))
+        setContent(prev => prev.map(c => ({ ...c, isMonitored: monitoredIds.has(c.id) })))
+      }
+    } catch (error) {
+      console.error('Failed to refresh monitored content:', error)
+    }
+  }
+
   const toggleMonitoring = async (item: ContentItem) => {
     setSaving(true)
+    // Optimistic update
+    setContent(prev => prev.map(c =>
+      c.id === item.id ? { ...c, isMonitored: !item.isMonitored } : c
+    ))
     try {
       const response = await fetch('/api/content/monitor', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           connectionId: selectedConnection,
           contentId: item.id,
@@ -118,21 +147,19 @@ export default function ContentPage() {
       })
 
       if (response.ok) {
-        // Update local state
-        setContent(prev => prev.map(existingItem =>
-          existingItem.id === item.id
-            ? { ...existingItem, isMonitored: !item.isMonitored }
-            : existingItem
+        await refreshMonitoredContent()
+      } else {
+        // Revert optimistic update on failure
+        setContent(prev => prev.map(c =>
+          c.id === item.id ? { ...c, isMonitored: item.isMonitored } : c
         ))
-
-        const monitoredResponse = await fetch('/api/content/monitored')
-        if (monitoredResponse.ok) {
-          const monitoredData = await monitoredResponse.json()
-          setMonitoredContent(monitoredData.content)
-        }
       }
     } catch (error) {
       console.error('Failed to update monitoring:', error)
+      // Revert optimistic update
+      setContent(prev => prev.map(c =>
+        c.id === item.id ? { ...c, isMonitored: item.isMonitored } : c
+      ))
     } finally {
       setSaving(false)
     }
@@ -196,7 +223,7 @@ export default function ContentPage() {
                     {item.title || item.platformContentId}
                   </p>
                   <p className="text-xs text-gray-500">
-                    {item.platform} • {item.platformContentId}
+                    {item.platform.charAt(0).toUpperCase() + item.platform.slice(1).toLowerCase()} • {item.platformContentId}
                   </p>
                 </div>
                 <span className="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800">

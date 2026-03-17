@@ -27,7 +27,12 @@ export async function GET() {
       },
     })
 
-    return NextResponse.json({ content: monitoredContent })
+    const normalized = monitoredContent.map((item) => ({
+      ...item,
+      platform: item.platform.toLowerCase(),
+    }))
+
+    return NextResponse.json({ content: normalized })
   } catch (error) {
     console.error('Error fetching monitored content:', error)
     return NextResponse.json(

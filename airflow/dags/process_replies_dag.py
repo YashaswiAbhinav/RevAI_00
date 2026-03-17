@@ -7,9 +7,14 @@ from datetime import datetime, timedelta
 import logging
 from airflow import DAG
 from airflow.operators.python import PythonOperator
+from airflow.models import Variable
 import os
 import sys
 sys.path.insert(0, '/opt/airflow')
+
+# Read interval from Airflow Variable set by the settings page (default 60 min)
+_process_interval = int(Variable.get('revai_process_interval_minutes', default_var=60))
+_schedule = f'*/{_process_interval} * * * *' if _process_interval < 60 else f'0 */{_process_interval // 60} * * *'
 
 # Import helper functions
 from tasks.helpers import (
@@ -42,8 +47,8 @@ default_args = {
 dag = DAG(
     'process_replies_dag',
     default_args=default_args,
-    description='Classify comments and generate AI replies every 1 hour',
-    schedule_interval='0 * * * *',  # Every hour at minute 0
+    description='Classify comments and generate AI replies',
+    schedule_interval=_schedule,
     catchup=False,
     tags=['revai', 'comments', 'ai', 'process'],
 )

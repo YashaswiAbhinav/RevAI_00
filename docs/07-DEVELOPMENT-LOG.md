@@ -1,10 +1,10 @@
 # Development Log
 
-## 📊 Current Status: PHASE 5 COMPLETE - READY FOR PHASE 6
+## 📊 Current Status: PHASE 6 IN PROGRESS
 
-**Last Updated**: 2026-03-17 03:35 PM
-**Phase**: Phase 5: Core Features (Complete)
-**Completion**: 85%
+**Last Updated**: 2026-03-18
+**Phase**: Phase 6: Airflow Automation (In Progress)
+**Completion**: 90%
 
 ---
 
@@ -158,6 +158,37 @@
 - [ ] Competitor tracking
 - [ ] A/B testing for reply styles
 - [ ] WhatsApp integration
+
+---
+
+## 📝 Notes & Decisions
+
+### 2026-03-18
+
+- **Fix**: Monitored content not persisting visually on `dashboard/content` page.
+- **Root Cause**: Two issues — (1) `isMonitored` flag on the content list was only set optimistically and not re-synced from DB after toggle; (2) Prisma enum `YOUTUBE` was being compared against lowercase platform strings, causing all items to appear unmonitored after reload.
+- **Solution**: `fetchContent` now fetches `/api/content` and `/api/content/monitored` in parallel and uses the monitored list as source of truth for `isMonitored`. Toggle now calls `refreshMonitoredContent()` which syncs both lists from DB. `/api/content/monitored` now normalizes platform to lowercase.
+- **Files Changed**:
+  - `app/dashboard/content/page.tsx`
+  - `app/api/content/monitored/route.ts`
+- **Impact**: Monitored state is now always consistent with the database, survives page reloads, and reverts correctly on API failure.
+
+### 2026-03-18
+
+- **Feature**: Added DAG schedule interval controls to the Settings page.
+- **Decision**: Used Airflow Variables (`Variable.get()`) as the bridge between the app and Airflow. DAGs read their interval from a named variable at parse time; the settings API writes to those variables via the Airflow REST API after saving to PostgreSQL.
+- **Why not mock**: Airflow Variables are the standard Airflow-native way to pass runtime config to DAGs without redeploying. The REST API call is best-effort (non-blocking) so settings save succeeds even if Airflow is down.
+- **Schema Changes**: Added `fetchIntervalMinutes`, `processIntervalMinutes`, `postIntervalMinutes` to `User` model in `prisma/schema.prisma`. Ran `npx prisma db push`.
+- **Files Changed**:
+  - `prisma/schema.prisma`
+  - `app/api/settings/route.ts`
+  - `app/dashboard/settings/page.tsx`
+  - `airflow/dags/fetch_comments_dag.py`
+  - `airflow/dags/process_replies_dag.py`
+  - `airflow/dags/post_replies_dag.py`
+  - `.env.example`
+- **New env vars**: `AIRFLOW_API_URL` (default `http://localhost:8080`), `AIRFLOW_API_USER` (default `admin`), `AIRFLOW_API_PASS` (default `admin`).
+- **Impact**: Users can now control how often each pipeline runs from the Settings UI. Changes persist to PostgreSQL and are synced to Airflow Variables. DAGs pick up the new schedule on next parse (~30s). Airflow Variables `revai_fetch_interval_minutes`, `revai_process_interval_minutes`, `revai_post_interval_minutes` are the live source of truth for DAG schedules.
 
 ---
 

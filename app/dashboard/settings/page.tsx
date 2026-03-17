@@ -11,6 +11,9 @@ interface Settings {
   maxRepliesPerHour: number
   businessContext: string
   notificationEmail: string
+  fetchIntervalMinutes: number
+  processIntervalMinutes: number
+  postIntervalMinutes: number
 }
 
 interface SettingsStats {
@@ -29,6 +32,9 @@ export default function SettingsPage() {
     maxRepliesPerHour: 10,
     businessContext: '',
     notificationEmail: '',
+    fetchIntervalMinutes: 30,
+    processIntervalMinutes: 60,
+    postIntervalMinutes: 15,
   })
   const [saving, setSaving] = useState(false)
   const [loadingSettings, setLoadingSettings] = useState(true)
@@ -263,6 +269,88 @@ export default function SettingsPage() {
                 />
                 <p className="mt-1 text-sm text-gray-500">
                   Email address for important notifications and reports.
+                </p>
+              </div>
+
+              <div className="mt-6 flex justify-end">
+                <button
+                  onClick={saveSettings}
+                  disabled={saving}
+                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {saving ? 'Saving...' : 'Save Settings'}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* DAG Schedule Settings */}
+      <div className="bg-white shadow rounded-lg">
+        <div className="px-4 py-5 sm:p-6">
+          <h3 className="text-lg leading-6 font-medium text-gray-900 mb-1">Automation Schedule</h3>
+          <p className="text-sm text-gray-500 mb-6">
+            Control how often each Airflow pipeline runs. Changes are saved to the database and synced to Airflow automatically. The new schedule takes effect on the next DAG parse (within ~30 seconds after saving).
+          </p>
+
+          {loadingSettings ? (
+            <div className="flex items-center justify-center py-10">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+            </div>
+          ) : (
+            <div className="space-y-6">
+              <div>
+                <label htmlFor="fetchIntervalMinutes" className="block text-sm font-medium text-gray-700">
+                  Fetch Comments Interval (minutes)
+                </label>
+                <input
+                  type="number"
+                  id="fetchIntervalMinutes"
+                  value={settings.fetchIntervalMinutes}
+                  onChange={(e) => handleInputChange('fetchIntervalMinutes', parseInt(e.target.value))}
+                  min="5"
+                  max="1440"
+                  className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                />
+                <p className="mt-1 text-sm text-gray-500">
+                  How often to pull new comments from YouTube/Instagram. Default: 30 min.
+                </p>
+              </div>
+
+              <div>
+                <label htmlFor="processIntervalMinutes" className="block text-sm font-medium text-gray-700">
+                  Process &amp; Generate Replies Interval (minutes)
+                </label>
+                <input
+                  type="number"
+                  id="processIntervalMinutes"
+                  value={settings.processIntervalMinutes}
+                  onChange={(e) => handleInputChange('processIntervalMinutes', parseInt(e.target.value))}
+                  min="5"
+                  max="1440"
+                  className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                />
+                <p className="mt-1 text-sm text-gray-500">
+                  How often Gemini AI classifies comments and generates replies. Default: 60 min.
+                </p>
+              </div>
+
+              <div>
+                <label htmlFor="postIntervalMinutes" className="block text-sm font-medium text-gray-700">
+                  Post Replies Interval (minutes)
+                </label>
+                <input
+                  type="number"
+                  id="postIntervalMinutes"
+                  value={settings.postIntervalMinutes}
+                  onChange={(e) => handleInputChange('postIntervalMinutes', parseInt(e.target.value))}
+                  min="5"
+                  max="1440"
+                  className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                />
+                <p className="mt-1 text-sm text-gray-500">
+                  How often approved replies are posted back to platforms. Default: 15 min.
                 </p>
               </div>
 
