@@ -1,12 +1,41 @@
 import { GoogleGenerativeAI } from '@google/generative-ai'
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!)
+const GEMINI_MODEL_CANDIDATES = [
+  process.env.GEMINI_MODEL,
+  'gemini-2.5-flash',
+  'gemini-2.0-flash',
+].filter(Boolean) as string[]
 
 export class GeminiAPI {
-  private model
+  private modelName: string
 
-  constructor(modelName = 'gemini-pro') {
-    this.model = genAI.getGenerativeModel({ model: modelName })
+  constructor(modelName = GEMINI_MODEL_CANDIDATES[0]) {
+    this.modelName = modelName
+  }
+
+  private async generateText(prompt: string): Promise<string> {
+    let lastError: unknown
+
+    for (const modelName of GEMINI_MODEL_CANDIDATES) {
+      try {
+        const model = genAI.getGenerativeModel({ model: modelName })
+        const result = await model.generateContent(prompt)
+        const response = await result.response
+        this.modelName = modelName
+        return response.text()
+      } catch (error) {
+        lastError = error
+        const message = String((error as Error)?.message || '')
+        const isMissingModel = message.includes('404') || message.includes('not found')
+
+        if (!isMissingModel) {
+          throw error
+        }
+      }
+    }
+
+    throw lastError ?? new Error('No supported Gemini model succeeded')
   }
 
   /**
@@ -43,9 +72,7 @@ Look for sensitive keywords like profanity, personal information, or controversi
 `
 
     try {
-      const result = await this.model.generateContent(prompt)
-      const response = await result.response
-      const text = response.text()
+      const text = await this.generateText(prompt)
 
       // Parse JSON response
       const classification = JSON.parse(text.trim())
@@ -123,9 +150,7 @@ Guidelines:
 Response:`
 
     try {
-      const result = await this.model.generateContent(prompt)
-      const response = await result.response
-      let reply = response.text().trim()
+      let reply = (await this.generateText(prompt)).trim()
 
       // Ensure reply is within length limit
       if (reply.length > maxLength) {
@@ -194,9 +219,7 @@ Focus on:
 `
 
     try {
-      const result = await this.model.generateContent(prompt)
-      const response = await result.response
-      const text = response.text()
+      const text = await this.generateText(prompt)
 
       const insights = JSON.parse(text.trim())
 
@@ -255,8 +278,7 @@ Focus on:
    */
   async healthCheck(): Promise<boolean> {
     try {
-      const result = await this.model.generateContent('Hello')
-      await result.response
+      await this.generateText('Hello')
       return true
     } catch (error) {
       console.error('Gemini API health check failed:', error)

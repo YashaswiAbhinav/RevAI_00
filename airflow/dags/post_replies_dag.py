@@ -19,6 +19,8 @@ from tasks.helpers import (
     get_decrypted_token,
     update_comment_status,
     increment_rate_limit,
+    post_youtube_reply,
+    post_instagram_reply,
     log_task_start,
     log_task_end
 )
@@ -76,20 +78,9 @@ def task_post_to_youtube(**context):
                     logger.warning(f"User {user_id} hit hourly rate limit, skipping")
                     continue
                 
-                # Get decrypted token
                 token = get_decrypted_token(user_id, 'youtube')
-                
-                # TODO: Call YouTube API to post reply
-                # from lib.integrations.youtube import post_youtube_reply
-                # result = post_youtube_reply(
-                #     parent_id=platform_comment_id,
-                #     text=reply_text,
-                #     access_token=token
-                # )
-                
-                # Mock posting
                 logger.info(f"Posting reply to YouTube comment {platform_comment_id}")
-                result = {'id': f'mock_reply_{platform_comment_id}'}
+                result = post_youtube_reply(token, platform_comment_id, reply_text)
                 
                 # Update comment status in Firestore
                 update_comment_status(
@@ -99,7 +90,7 @@ def task_post_to_youtube(**context):
                         'posted': {
                             'isPosted': True,
                             'postedAt': datetime.now(),
-                            'platformReplyId': result['id'],
+                            'platformReplyId': result.get('id'),
                             'platform': 'youtube'
                         }
                     }
@@ -108,8 +99,7 @@ def task_post_to_youtube(**context):
                 # Increment rate limit
                 increment_rate_limit(user_id, 'youtube')
                 
-                # Wait between posts to avoid spam detection (60-120 seconds)
-                wait_time = random.randint(60, 120)
+                wait_time = random.randint(2, 5)
                 logger.info(f"Waiting {wait_time} seconds before next post...")
                 time.sleep(wait_time)
                 
@@ -170,20 +160,9 @@ def task_post_to_instagram(**context):
                     logger.warning(f"User {user_id} hit hourly rate limit, skipping")
                     continue
                 
-                # Get decrypted token
                 token = get_decrypted_token(user_id, 'instagram')
-                
-                # TODO: Call Instagram API to post reply
-                # from lib.integrations.instagram import post_instagram_reply
-                # result = post_instagram_reply(
-                #     parent_id=platform_comment_id,
-                #     text=reply_text,
-                #     access_token=token
-                # )
-                
-                # Mock posting
                 logger.info(f"Posting reply to Instagram comment {platform_comment_id}")
-                result = {'id': f'mock_reply_{platform_comment_id}'}
+                result = post_instagram_reply(token, platform_comment_id, reply_text)
                 
                 # Update comment status in Firestore
                 update_comment_status(
@@ -193,7 +172,7 @@ def task_post_to_instagram(**context):
                         'posted': {
                             'isPosted': True,
                             'postedAt': datetime.now(),
-                            'platformReplyId': result['id'],
+                            'platformReplyId': result.get('id'),
                             'platform': 'instagram'
                         }
                     }
@@ -202,8 +181,7 @@ def task_post_to_instagram(**context):
                 # Increment rate limit
                 increment_rate_limit(user_id, 'instagram')
                 
-                # Wait between posts to avoid spam detection (60-120 seconds)
-                wait_time = random.randint(60, 120)
+                wait_time = random.randint(2, 5)
                 logger.info(f"Waiting {wait_time} seconds before next post...")
                 time.sleep(wait_time)
                 

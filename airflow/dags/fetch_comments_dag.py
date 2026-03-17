@@ -16,6 +16,8 @@ from tasks.helpers import (
     get_monitored_content,
     get_decrypted_token,
     save_comment_to_firestore,
+    fetch_youtube_comments,
+    fetch_instagram_comments,
     log_task_start,
     log_task_end
 )
@@ -92,25 +94,20 @@ def task_fetch_youtube_comments(**context):
                 user_id = content['userId']
                 video_id = content['platformContentId']
                 
-                # Get decrypted access token
                 token = get_decrypted_token(user_id, 'youtube')
-                
-                # TODO: Call YouTube API to fetch comments
-                # For now, we'll just log this
-                logger.info(f"Would fetch comments for video {video_id} with token: {token[:20]}...")
-                
-                # In production, you would call:
-                # from lib.integrations.youtube import get_youtube_comments
-                # comments = get_youtube_comments(video_id, token)
-                # for comment in comments:
-                #     save_comment_to_firestore(user_id, {
-                #         'id': comment['id'],
-                #         'platform': 'youtube',
-                #         'text': comment['text'],
-                #         'authorId': comment['authorId'],
-                #         'contentId': video_id
-                #     })
-                #     comments_fetched += 1
+                comments = fetch_youtube_comments(token, video_id)
+
+                for comment in comments:
+                    save_comment_to_firestore(user_id, {
+                        'id': comment['id'],
+                        'connectionId': content.get('connectionId'),
+                        'platform': 'youtube',
+                        'text': comment['text'],
+                        'author': comment['author'],
+                        'contentId': video_id,
+                        'publishedAt': comment.get('publishedAt'),
+                    })
+                    comments_fetched += 1
                 
             except Exception as e:
                 logger.error(f"Error fetching comments for video {video_id}: {e}")
@@ -151,24 +148,20 @@ def task_fetch_instagram_comments(**context):
                 user_id = content['userId']
                 post_id = content['platformContentId']
                 
-                # Get decrypted access token
                 token = get_decrypted_token(user_id, 'instagram')
-                
-                # TODO: Call Instagram API to fetch comments
-                logger.info(f"Would fetch comments for post {post_id} with token: {token[:20]}...")
-                
-                # In production:
-                # from lib.integrations.instagram import get_instagram_comments
-                # comments = get_instagram_comments(post_id, token)
-                # for comment in comments:
-                #     save_comment_to_firestore(user_id, {
-                #         'id': comment['id'],
-                #         'platform': 'instagram',
-                #         'text': comment['text'],
-                #         'authorId': comment['authorId'],
-                #         'contentId': post_id
-                #     })
-                #     comments_fetched += 1
+                comments = fetch_instagram_comments(token, post_id)
+
+                for comment in comments:
+                    save_comment_to_firestore(user_id, {
+                        'id': comment['id'],
+                        'connectionId': content.get('connectionId'),
+                        'platform': 'instagram',
+                        'text': comment['text'],
+                        'author': comment['author'],
+                        'contentId': post_id,
+                        'publishedAt': comment.get('publishedAt'),
+                    })
+                    comments_fetched += 1
                 
             except Exception as e:
                 logger.error(f"Error fetching comments for post {post_id}: {e}")

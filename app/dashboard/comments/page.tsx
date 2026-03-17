@@ -2,7 +2,7 @@
 
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 interface Comment {
   id: string
@@ -15,7 +15,7 @@ interface Comment {
   contentTitle: string
   sentiment?: 'positive' | 'neutral' | 'negative'
   aiReply?: string
-  status: 'pending' | 'approved' | 'posted' | 'rejected'
+  status: 'pending' | 'classified' | 'ready_to_post' | 'replied' | 'failed' | 'rejected'
 }
 
 interface FilterOptions {
@@ -30,8 +30,10 @@ export default function CommentsPage() {
   const router = useRouter()
   const [comments, setComments] = useState<Comment[]>([])
   const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
   const [generating, setGenerating] = useState<string | null>(null)
   const [approving, setApproving] = useState<string | null>(null)
+  const hasLoadedRef = useRef(false)
   const [filters, setFilters] = useState<FilterOptions>({
     platform: '',
     sentiment: '',
@@ -47,12 +49,19 @@ export default function CommentsPage() {
 
   useEffect(() => {
     if (session?.user) {
-      fetchComments()
+      const controller = new AbortController()
+      fetchComments(controller.signal)
+      return () => controller.abort()
     }
   }, [session, filters])
 
-  const fetchComments = async () => {
-    setLoading(true)
+  const fetchComments = async (signal?: AbortSignal) => {
+    if (hasLoadedRef.current) {
+      setRefreshing(true)
+    } else {
+      setLoading(true)
+    }
+
     try {
       const queryParams = new URLSearchParams()
       if (filters.platform) queryParams.set('platform', filters.platform)
@@ -60,15 +69,23 @@ export default function CommentsPage() {
       if (filters.status) queryParams.set('status', filters.status)
       if (filters.search) queryParams.set('search', filters.search)
 
-      const response = await fetch(`/api/comments?${queryParams}`)
+      const response = await fetch(`/api/comments?${queryParams}`, {
+        cache: 'no-store',
+        signal,
+      })
       if (response.ok) {
         const data = await response.json()
         setComments(data.comments)
+        hasLoadedRef.current = true
       }
     } catch (error) {
+      if ((error as Error).name === 'AbortError') {
+        return
+      }
       console.error('Failed to fetch comments:', error)
     } finally {
       setLoading(false)
+      setRefreshing(false)
     }
   }
 
@@ -85,10 +102,14 @@ export default function CommentsPage() {
 
       if (response.ok) {
         const data = await response.json()
-        // Update the comment with the generated reply
         setComments(prev => prev.map(comment =>
           comment.id === commentId
-            ? { ...comment, aiReply: data.reply, status: 'pending' as const }
+            ? {
+                ...comment,
+                aiReply: data.reply,
+                sentiment: data.classification?.sentiment || comment.sentiment,
+                status: data.status || 'classified',
+              }
             : comment
         ))
       }
@@ -114,7 +135,7 @@ export default function CommentsPage() {
         // Update the comment status
         setComments(prev => prev.map(comment =>
           comment.id === commentId
-            ? { ...comment, status: 'approved' as const }
+            ? { ...comment, status: 'ready_to_post' as const }
             : comment
         ))
       }
@@ -160,10 +181,20 @@ export default function CommentsPage() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'pending': return 'bg-yellow-100 text-yellow-800'
-      case 'approved': return 'bg-blue-100 text-blue-800'
-      case 'posted': return 'bg-green-100 text-green-800'
+      case 'classified': return 'bg-indigo-100 text-indigo-800'
+      case 'ready_to_post': return 'bg-blue-100 text-blue-800'
+      case 'replied': return 'bg-green-100 text-green-800'
       case 'rejected': return 'bg-red-100 text-red-800'
+      case 'failed': return 'bg-red-100 text-red-800'
       default: return 'bg-gray-100 text-gray-800'
+    }
+  }
+
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case 'ready_to_post': return 'ready to post'
+      case 'replied': return 'posted'
+      default: return status
     }
   }
 
@@ -182,6 +213,9 @@ export default function CommentsPage() {
         <p className="mt-1 text-sm text-gray-600">
           Review comments from your monitored content and manage AI-generated replies.
         </p>
+        {refreshing && (
+          <p className="mt-2 text-sm text-blue-600">Refreshing comments...</p>
+        )}
       </div>
 
       {/* Filters */}
@@ -232,8 +266,10 @@ export default function CommentsPage() {
             >
               <option value="">All Status</option>
               <option value="pending">Pending</option>
-              <option value="approved">Approved</option>
-              <option value="posted">Posted</option>
+              <option value="classified">Classified</option>
+              <option value="ready_to_post">Ready To Post</option>
+              <option value="replied">Posted</option>
+              <option value="failed">Failed</option>
               <option value="rejected">Rejected</option>
             </select>
           </div>
@@ -299,7 +335,7 @@ export default function CommentsPage() {
                         </span>
                       )}
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(comment.status)}`}>
-                        {comment.status}
+                        {getStatusLabel(comment.status)}
                       </span>
                     </div>
 
@@ -342,14 +378,14 @@ export default function CommentsPage() {
                         </button>
                       )}
 
-                      {comment.aiReply && comment.status === 'pending' && (
+                      {comment.aiReply && (comment.status === 'pending' || comment.status === 'classified') && (
                         <>
                           <button
                             onClick={() => approveReply(comment.id)}
-                            disabled={approving === comment.id}
-                            className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50"
-                          >
-                            {approving === comment.id ? 'Approving...' : 'Approve & Post'}
+                          disabled={approving === comment.id}
+                          className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50"
+                        >
+                            {approving === comment.id ? 'Approving...' : 'Approve For Posting'}
                           </button>
                           <button
                             onClick={() => rejectReply(comment.id)}
@@ -360,12 +396,12 @@ export default function CommentsPage() {
                         </>
                       )}
 
-                      {comment.status === 'approved' && (
+                      {comment.status === 'ready_to_post' && (
                         <span className="inline-flex items-center px-3 py-2 text-sm text-green-600">
                           <svg className="-ml-0.5 mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                           </svg>
-                          Approved for posting
+                          Queued for posting
                         </span>
                       )}
                     </div>

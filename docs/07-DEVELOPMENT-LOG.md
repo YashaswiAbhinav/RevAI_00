@@ -238,6 +238,15 @@
   - `app/dashboard/content/page.tsx`
 - **Impact**: Connected platform accounts can now fetch available content and persist monitoring state using `userId + platform + platformContentId`, which unblocks the real "Connect -> Select content" flow for YouTube.
 
+### 2026-03-17 04:32 PM
+
+- **Fix**: Replaced the hardcoded Gemini model target `gemini-pro` with a supported fallback chain in both the Next.js app and Airflow helpers.
+- **Files Changed**:
+  - `lib/integrations/gemini.ts`
+  - `airflow/tasks/helpers.py`
+- **Reason**: The installed Gemini SDK/API version no longer supports `models/gemini-pro` for `generateContent`, which caused `404 Not Found` during manual reply generation and automated processing.
+- **Impact**: Gemini calls now try `GEMINI_MODEL` first when provided, then fall back to `gemini-2.5-flash` and `gemini-2.0-flash`, which restores compatibility with current Google AI Studio keys.
+
 ### 2026-03-17 04:24 PM
 
 - **Issue Reconfirmed**: YouTube OAuth is still intermittently blocked by Google with `redirect_uri_mismatch`.
@@ -249,6 +258,38 @@
 - **Issue Identified**: YouTube OAuth callback is now reaching the app, but the connection fails because `YouTube Data API v3` is disabled for the Google Cloud project behind the OAuth client.
 - **Solution**: Added a specific callback error mapping and UI message for `accessNotConfigured` / API-disabled responses.
 - **Impact**: The app can now distinguish Google Console setup issues from application callback failures, making the next user action explicit: enable YouTube Data API v3 and retry after propagation.
+
+### 2026-03-17 04:42 PM
+
+- **Refactor**: Replaced Airflow fetch/process/post mock branches with real helper calls for YouTube, Instagram, and Gemini.
+- **Files Changed**:
+  - `airflow/tasks/helpers.py`
+  - `airflow/dags/fetch_comments_dag.py`
+  - `airflow/dags/process_replies_dag.py`
+  - `airflow/dags/post_replies_dag.py`
+  - `airflow/requirements.txt`
+  - `docker-compose.yml`
+- **Impact**: Airflow now uses the current Prisma schema, decrypts tokens with the same CryptoJS-compatible format as the app, loads env vars from `.env.local`, and is prepared to make real platform/AI API calls instead of placeholder results.
+- **Remaining Runtime Requirement**: Restart Airflow containers so the new Python dependencies and DAG code are loaded, then validate with monitored YouTube content and a real `GEMINI_API_KEY`.
+
+### 2026-03-17 04:54 PM
+
+- **Runtime Bug Fixed**: Airflow detected monitored YouTube content but fetched `0` comments because Python token decryption was treating `ENCRYPTION_KEY` as raw hex bytes instead of the passphrase string used by CryptoJS in the app.
+- **Solution**: Updated Airflow token decryption to mirror the app's passphrase behavior exactly.
+- **Impact**: Airflow should now be able to decrypt stored OAuth tokens and make real YouTube API calls during `fetch_comments_dag`.
+
+### 2026-03-17 05:05 PM
+
+- **Frontend/Data Fix**: Replaced the old platform-live comments dashboard path with Firestore-backed comment reads, and wired manual comment actions (`generate`, `approve`, `reject`) to the same Firestore documents.
+- **Files Changed**:
+  - `app/api/comments/route.ts`
+  - `app/api/comments/generate-reply/route.ts`
+  - `app/api/comments/approve/route.ts`
+  - `app/api/comments/reject/route.ts`
+  - `app/dashboard/comments/page.tsx`
+  - `app/api/content/monitored/route.ts`
+  - `app/dashboard/content/page.tsx`
+- **Impact**: Comments fetched by Airflow should now be visible in the UI, manual AI actions use Firestore instead of mocks, and monitored content is always visible below the platform selector on the content page.
 
 ---
 

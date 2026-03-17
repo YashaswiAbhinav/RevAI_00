@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
+import { firestore } from '@/lib/db/firestore'
 
 export async function POST(request: NextRequest) {
   try {
@@ -15,12 +16,22 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Comment ID required' }, { status: 400 })
     }
 
-    // In a real implementation, you would:
-    // 1. Update the comment status in your database
-    // 2. Queue the reply for posting via Airflow
-    // 3. Handle rate limiting
+    const commentRef = firestore.collection('comments').doc(commentId)
+    const commentSnapshot = await commentRef.get()
+    if (!commentSnapshot.exists) {
+      return NextResponse.json({ error: 'Comment not found' }, { status: 404 })
+    }
 
-    // For now, just return success
+    const comment = commentSnapshot.data()
+    if (!comment || comment.userId !== session.user.id) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+
+    await commentRef.update({
+      status: 'ready_to_post',
+      updatedAt: new Date(),
+    })
+
     return NextResponse.json({ success: true })
 
   } catch (error) {

@@ -1,7 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
+import { prisma } from '@/lib/db/postgres'
+import { firestore } from '@/lib/db/firestore'
+import { classifyComment } from '@/lib/integrations/gemini'
 import { generateReply } from '@/lib/integrations/gemini'
+
+const ACTIVE_GEMINI_MODEL =
+  process.env.GEMINI_MODEL || 'gemini-2.5-flash'
 
 export async function POST(request: NextRequest) {
   try {
@@ -16,17 +22,49 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Comment ID required' }, { status: 400 })
     }
 
-    // For now, we'll generate a reply based on a mock comment
-    // In a real implementation, you'd fetch the comment from your database
-    const mockComment = {
-      text: "Great video! Really helpful content.",
-      author: "John Doe",
-      platform: "youtube"
+    const commentRef = firestore.collection('comments').doc(commentId)
+    const commentSnapshot = await commentRef.get()
+    if (!commentSnapshot.exists) {
+      return NextResponse.json({ error: 'Comment not found' }, { status: 404 })
     }
 
-    const reply = await generateReply(mockComment.text, mockComment.author, mockComment.platform)
+    const comment = commentSnapshot.data()
+    if (!comment || comment.userId !== session.user.id) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
 
-    return NextResponse.json({ reply })
+    const user = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: {
+        businessContext: true,
+      },
+    })
+
+    const classification = await classifyComment(comment.text || '')
+    const reply = await generateReply(
+      comment.text || '',
+      comment.author?.name || 'Customer',
+      comment.platform || 'youtube',
+      user?.businessContext || undefined
+    )
+
+    await commentRef.update({
+      classification,
+      generatedReply: {
+        text: reply,
+        generatedAt: new Date(),
+        model: ACTIVE_GEMINI_MODEL,
+      },
+      status: 'classified',
+      updatedAt: new Date(),
+    })
+
+    return NextResponse.json({
+      reply,
+      classification,
+      status: 'classified',
+      model: ACTIVE_GEMINI_MODEL,
+    })
 
   } catch (error) {
     console.error('Error generating AI reply:', error)

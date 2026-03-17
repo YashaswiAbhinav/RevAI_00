@@ -21,12 +21,21 @@ interface Connection {
   channelId: string
 }
 
+interface MonitoredItem {
+  id: string
+  platform: string
+  platformContentId: string
+  title?: string
+  updatedAt: string
+}
+
 export default function ContentPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
   const [connections, setConnections] = useState<Connection[]>([])
   const [selectedConnection, setSelectedConnection] = useState<string>('')
   const [content, setContent] = useState<ContentItem[]>([])
+  const [monitoredContent, setMonitoredContent] = useState<MonitoredItem[]>([])
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
 
@@ -37,6 +46,18 @@ export default function ContentPage() {
   }, [status, router])
 
   useEffect(() => {
+    async function fetchMonitoredContent() {
+      try {
+        const response = await fetch('/api/content/monitored')
+        if (response.ok) {
+          const data = await response.json()
+          setMonitoredContent(data.content)
+        }
+      } catch (error) {
+        console.error('Failed to fetch monitored content:', error)
+      }
+    }
+
     async function fetchConnections() {
       try {
         const response = await fetch('/api/connections')
@@ -52,6 +73,7 @@ export default function ContentPage() {
 
     if (session?.user) {
       fetchConnections()
+      fetchMonitoredContent()
     }
   }, [session])
 
@@ -102,6 +124,12 @@ export default function ContentPage() {
             ? { ...existingItem, isMonitored: !item.isMonitored }
             : existingItem
         ))
+
+        const monitoredResponse = await fetch('/api/content/monitored')
+        if (monitoredResponse.ok) {
+          const monitoredData = await monitoredResponse.json()
+          setMonitoredContent(monitoredData.content)
+        }
       }
     } catch (error) {
       console.error('Failed to update monitoring:', error)
@@ -145,6 +173,39 @@ export default function ContentPage() {
             </option>
           ))}
         </select>
+      </div>
+
+      <div className="bg-white shadow rounded-lg p-6">
+        <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
+          Currently Monitored Content
+        </h3>
+
+        {monitoredContent.length === 0 ? (
+          <p className="text-sm text-gray-500">
+            No content is currently being monitored.
+          </p>
+        ) : (
+          <div className="space-y-3">
+            {monitoredContent.map((item) => (
+              <div
+                key={item.id}
+                className="flex items-center justify-between rounded-lg border border-gray-200 px-4 py-3"
+              >
+                <div>
+                  <p className="text-sm font-medium text-gray-900">
+                    {item.title || item.platformContentId}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    {item.platform} • {item.platformContentId}
+                  </p>
+                </div>
+                <span className="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800">
+                  Monitored
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Content List */}

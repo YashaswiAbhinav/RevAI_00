@@ -17,11 +17,14 @@ from tasks.helpers import (
     get_classified_comments,
     get_user_settings,
     update_comment_status,
+    classify_comment_with_gemini,
+    generate_reply_with_gemini,
     log_task_start,
     log_task_end
 )
 
 logger = logging.getLogger(__name__)
+ACTIVE_GEMINI_MODEL = os.getenv('GEMINI_MODEL', 'gemini-2.5-flash')
 
 # Default arguments for DAG
 default_args = {
@@ -63,18 +66,7 @@ def task_classify_comments(**context):
         
         for comment in pending_comments:
             try:
-                # TODO: Call Gemini API for classification
-                # from lib.integrations.gemini import classify_comment
-                # classification = classify_comment(comment['text'])
-                
-                # For now, mock classification
-                classification = {
-                    'sentiment': 'positive',
-                    'category': 'feedback',
-                    'requiresReply': True,
-                    'urgency': 'normal',
-                    'confidence': 0.85
-                }
+                classification = classify_comment_with_gemini(comment['text'])
                 
                 logger.info(f"Classified comment {comment.get('platformCommentId')}: {classification['sentiment']}")
                 
@@ -125,16 +117,14 @@ def task_generate_replies(**context):
                 # Get user settings for personalization
                 user_settings = get_user_settings(user_id)
                 
-                # TODO: Call Gemini API for reply generation
-                # from lib.integrations.gemini import generate_reply
-                # reply_text = generate_reply(
-                #     comment_text=comment_text,
-                #     business_context=user_settings['businessContext'],
-                #     tone=user_settings['aiTone']
-                # )
-                
-                # Mock reply generation
-                reply_text = f"Thank you for your feedback! We appreciate your comment and will look into it."
+                classification = comment.get('classification', {})
+                reply_text = generate_reply_with_gemini(
+                    comment_text=comment_text,
+                    comment_type=classification.get('type', 'general'),
+                    business_context=user_settings.get('businessContext') or '',
+                    tone=user_settings.get('aiTone') or 'friendly',
+                    max_length=300,
+                )
                 
                 logger.info(f"Generated reply for comment {comment.get('platformCommentId')}")
                 
@@ -146,7 +136,7 @@ def task_generate_replies(**context):
                         'generatedReply': {
                             'text': reply_text,
                             'generatedAt': datetime.now(),
-                            'model': 'gemini-pro',
+                            'model': ACTIVE_GEMINI_MODEL,
                             'userSettings': {
                                 'tone': user_settings['aiTone'],
                                 'businessContext': user_settings['businessContext']

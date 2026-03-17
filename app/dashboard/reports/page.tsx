@@ -46,7 +46,9 @@ export default function ReportsPage() {
   const fetchReports = async () => {
     setLoading(true)
     try {
-      const response = await fetch(`/api/reports?timeRange=${timeRange}`)
+      const response = await fetch(`/api/reports?timeRange=${timeRange}`, {
+        cache: 'no-store',
+      })
       if (response.ok) {
         const data = await response.json()
         setReportData(data)
@@ -193,17 +195,32 @@ export default function ReportsPage() {
             </div>
           </div>
 
-          {/* Recent Activity Chart Placeholder */}
+          {/* Recent Activity */}
           <div className="bg-white overflow-hidden shadow rounded-lg md:col-span-3">
             <div className="p-5">
               <h3 className="text-sm font-medium text-gray-500">Recent Activity</h3>
               <div className="mt-3">
-                <div className="bg-gray-50 rounded-lg p-4 text-center">
-                  <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                  </svg>
-                  <p className="mt-2 text-sm text-gray-500">Activity chart will be implemented in Phase 6</p>
-                </div>
+                {reportData.recentActivity.length > 0 ? (
+                  <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
+                    {reportData.recentActivity.map((activity) => (
+                      <div key={activity.date} className="rounded-lg border border-gray-200 bg-gray-50 p-4">
+                        <p className="text-sm font-medium text-gray-900">
+                          {new Date(`${activity.date}T00:00:00`).toLocaleDateString()}
+                        </p>
+                        <div className="mt-3 flex items-center justify-between text-sm">
+                          <span className="text-gray-600">Comments</span>
+                          <span className="font-medium text-gray-900">{activity.comments}</span>
+                        </div>
+                        <div className="mt-2 flex items-center justify-between text-sm">
+                          <span className="text-gray-600">Replies Posted</span>
+                          <span className="font-medium text-gray-900">{activity.replies}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-500">No recent activity in this date range yet.</p>
+                )}
               </div>
             </div>
           </div>

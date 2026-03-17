@@ -3,10 +3,19 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/db/postgres'
 import { firestore } from '@/lib/db/firestore'
-import { decryptToken } from '@/lib/security/encryption'
-import { getYouTubeComments } from '@/lib/integrations/youtube'
-import { getInstagramComments } from '@/lib/integrations/instagram'
-import { classifyComment } from '@/lib/integrations/gemini'
+
+function normalizeSentiment(value: unknown): 'positive' | 'neutral' | 'negative' | undefined {
+  if (typeof value !== 'string') {
+    return undefined
+  }
+
+  const normalized = value.toLowerCase()
+  if (normalized === 'positive' || normalized === 'neutral' || normalized === 'negative') {
+    return normalized
+  }
+
+  return undefined
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -21,68 +30,56 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get('status')
     const search = searchParams.get('search')
 
-    // Get all monitored content for the user
-    const monitoredContent = await prisma.monitoredContent.findMany({
-      where: {
-        connection: {
-          userId: session.user.id,
-          status: 'connected',
-        },
-      },
-      include: {
-        connection: true,
+    const contentRecords = await prisma.monitoredContent.findMany({
+      where: { userId: session.user.id },
+      select: {
+        platform: true,
+        platformContentId: true,
+        title: true,
       },
     })
 
-    const comments: any[] = []
+    const contentTitleMap = new Map(
+      contentRecords.map((item) => [
+        `${item.platform}:${item.platformContentId}`,
+        item.title || item.platformContentId,
+      ])
+    )
 
-    // Fetch comments from each monitored content
-    for (const content of monitoredContent) {
-      try {
-        const accessToken = decryptToken(content.connection.accessToken)
+    const snapshot = await firestore
+      .collection('comments')
+      .where('userId', '==', session.user.id)
+      .limit(200)
+      .get()
 
-        let contentComments: any[] = []
+    const comments = snapshot.docs.map((doc) => {
+      const data = doc.data()
+      const platformValue = String(data.platform || '').toUpperCase()
+      const contentId = String(data.contentId || '')
+      const classification = typeof data.classification === 'object' && data.classification
+        ? data.classification as Record<string, unknown>
+        : null
+      const publishedAt = data.publishedAt?.toDate?.()
+        ? data.publishedAt.toDate().toISOString()
+        : data.publishedAt || data.fetchedAt?.toDate?.()?.toISOString() || new Date().toISOString()
 
-        if (content.platform === 'youtube') {
-          const result = await getYouTubeComments(accessToken, content.contentId)
-          contentComments = result.comments.map(comment => ({
-            id: comment.id,
-            text: comment.snippet.textDisplay,
-            author: comment.snippet.authorDisplayName,
-            authorAvatar: comment.snippet.authorProfileImageUrl,
-            publishedAt: comment.snippet.publishedAt,
-            platform: 'youtube',
-            contentId: content.contentId,
-            contentTitle: content.contentId, // We'll need to store this
-          }))
-        } else if (content.platform === 'instagram') {
-          const result = await getInstagramComments(accessToken, content.contentId)
-          contentComments = result.comments.map(comment => ({
-            id: comment.id,
-            text: comment.text,
-            author: comment.username,
-            publishedAt: comment.timestamp,
-            platform: 'instagram',
-            contentId: content.contentId,
-            contentTitle: content.contentId, // We'll need to store this
-          }))
-        }
-
-        // Classify sentiment for new comments
-        for (const comment of contentComments) {
-          try {
-            const classification = await classifyComment(comment.text)
-            comment.sentiment = classification.sentiment
-          } catch (error) {
-            comment.sentiment = 'neutral' // fallback
-          }
-        }
-
-        comments.push(...contentComments)
-      } catch (error) {
-        console.error(`Failed to fetch comments for content ${content.contentId}:`, error)
+      return {
+        id: doc.id,
+        text: data.text || '',
+        author: data.author?.name || 'Unknown',
+        authorAvatar: data.author?.avatarUrl || '',
+        publishedAt,
+        platform: String(data.platform || ''),
+        contentId,
+        contentTitle: contentTitleMap.get(`${platformValue}:${contentId}`) || contentId,
+        sentiment: normalizeSentiment(
+          classification?.sentiment ??
+          (data.sentiment as unknown)
+        ),
+        aiReply: data.generatedReply?.text || '',
+        status: data.status || 'pending',
       }
-    }
+    })
 
     // Apply filters
     let filteredComments = comments
