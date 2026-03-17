@@ -6,8 +6,11 @@ if (!ENCRYPTION_KEY) {
   throw new Error('ENCRYPTION_KEY environment variable is required')
 }
 
-if (ENCRYPTION_KEY.length !== 32) {
-  throw new Error('ENCRYPTION_KEY must be exactly 32 characters long')
+const is32CharKey = ENCRYPTION_KEY.length === 32
+const is64CharHexKey = ENCRYPTION_KEY.length === 64 && /^[0-9a-fA-F]+$/.test(ENCRYPTION_KEY)
+
+if (!is32CharKey && !is64CharHexKey) {
+  throw new Error('ENCRYPTION_KEY must be 32 characters or a 64-character hex string')
 }
 
 /**
@@ -71,11 +74,11 @@ export function safeDecrypt(encryptedData: string | null | undefined): string | 
 }
 
 /**
- * Generates a random encryption key (32 characters)
+ * Generates a random encryption key (64-character hex string / 32 bytes)
  * Use this to generate the ENCRYPTION_KEY environment variable
  */
 export function generateEncryptionKey(): string {
-  return CryptoJS.lib.WordArray.random(256/8).toString()
+  return CryptoJS.lib.WordArray.random(256 / 8).toString()
 }
 
 /**

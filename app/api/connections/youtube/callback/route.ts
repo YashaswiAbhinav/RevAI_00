@@ -3,6 +3,12 @@ import { youtubeAPI } from '@/lib/integrations/youtube'
 import { prisma } from '@/lib/db/postgres'
 import { encryptToken } from '@/lib/security/encryption'
 
+function redirectWithError(request: NextRequest, errorCode: string) {
+  return NextResponse.redirect(
+    new URL(`/dashboard/connections?error=${errorCode}`, request.url)
+  )
+}
+
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams
@@ -12,15 +18,11 @@ export async function GET(request: NextRequest) {
 
     if (error) {
       console.error('YouTube OAuth error:', error)
-      return NextResponse.redirect(
-        new URL('/dashboard/connections?error=oauth_failed', request.url)
-      )
+      return redirectWithError(request, 'oauth_failed')
     }
 
     if (!code || !state) {
-      return NextResponse.redirect(
-        new URL('/dashboard/connections?error=missing_params', request.url)
-      )
+      return redirectWithError(request, 'missing_params')
     }
 
     // Verify user exists
@@ -29,18 +31,14 @@ export async function GET(request: NextRequest) {
     })
 
     if (!user) {
-      return NextResponse.redirect(
-        new URL('/dashboard/connections?error=user_not_found', request.url)
-      )
+      return redirectWithError(request, 'user_not_found')
     }
 
     // Exchange code for tokens
     const tokens = await youtubeAPI.getTokens(code)
 
     if (!tokens.access_token) {
-      return NextResponse.redirect(
-        new URL('/dashboard/connections?error=token_exchange_failed', request.url)
-      )
+      return redirectWithError(request, 'token_exchange_failed')
     }
 
     // Get channel information
@@ -98,10 +96,23 @@ export async function GET(request: NextRequest) {
       new URL('/dashboard/connections?success=youtube_connected', request.url)
     )
 
-  } catch (error) {
+  } catch (error: any) {
     console.error('YouTube callback error:', error)
-    return NextResponse.redirect(
-      new URL('/dashboard/connections?error=connection_failed', request.url)
-    )
+
+    const message = String(error?.message || '')
+
+    if (message.includes('No channel found')) {
+      return redirectWithError(request, 'no_youtube_channel')
+    }
+
+    if (message.includes('insufficient permissions')) {
+      return redirectWithError(request, 'insufficient_permissions')
+    }
+
+    if (message.includes('invalid_grant')) {
+      return redirectWithError(request, 'token_exchange_failed')
+    }
+
+    return redirectWithError(request, 'connection_failed')
   }
 }

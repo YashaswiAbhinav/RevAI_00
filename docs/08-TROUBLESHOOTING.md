@@ -146,6 +146,19 @@ Callback URL mismatch
 ```
    Must match your dev server URL (no trailing slash!)
 
+3. **Register the exact YouTube connection callback URI**:
+   - Go to Google Cloud Console → APIs & Services → Credentials
+   - Open your OAuth 2.0 Client ID
+   - Under **Authorized redirect URIs**, add:
+```text
+http://localhost:3000/api/connections/youtube/callback
+```
+   - If you also use Google sign-in via NextAuth, keep this one too:
+```text
+http://localhost:3000/api/auth/callback/google
+```
+   Google requires an exact match for the `redirect_uri`.
+
 ---
 
 ### "Session Not Persisting"
@@ -172,7 +185,96 @@ Callback URL mismatch
 
 ---
 
+### "Google Sign-In Returns To /auth/login?error=Callback"
+
+**Problem**: Google account selection succeeds, but the app returns to:
+```text
+/auth/login?callbackUrl=http%3A%2F%2Flocalhost%3A3000%2Fdashboard&error=Callback
+```
+
+**Common Causes and Fixes**:
+
+1. **`NEXTAUTH_URL` does not match the running app**
+```bash
+NEXTAUTH_URL="http://localhost:3000"
+```
+If the app runs on port `3000`, do not leave `NEXTAUTH_URL` at `3001`.
+
+2. **Auth options are imported from the route file instead of a shared module**
+Use a shared auth config such as `lib/auth.ts`, then import `authOptions` from there in layouts and API routes.
+
+3. **Google sign-in is using `PrismaAdapter` without the required NextAuth tables**
+If the Prisma schema does not include `Account`, `Session`, and `VerificationToken`, either:
+- add those models and migrate the database, or
+- use JWT sessions and create/reuse users manually during the Google sign-in callback.
+
+4. **Old cookies or stale dev server state**
+Clear cookies for `localhost:3000`, then restart the dev server:
+```bash
+npm run dev
+```
+
+---
+
+### "YouTube Connect Redirects To /dashboard/connections?error=connection_failed"
+
+**Problem**: Google OAuth finishes, but the app redirects back to the connections page with:
+```text
+/dashboard/connections?error=connection_failed
+```
+
+**Likely causes**:
+
+1. **The Google account has no usable YouTube channel**
+   The callback may succeed, but `channels.list({ mine: true })` can still return no channel.
+
+2. **Token exchange succeeded, but the follow-up YouTube API request failed**
+   This can happen because of missing permissions, revoked consent, or Google account/channel setup issues.
+
+3. **The app was hiding the real callback error**
+   A generic catch block can mask the underlying failure unless the callback maps errors to specific codes.
+
+**What to do**:
+
+- Retry the flow after the callback error mapping update.
+- Check the banner on the Connections page for a more specific error such as:
+  - `no_youtube_channel`
+  - `token_exchange_failed`
+  - `insufficient_permissions`
+- If needed, inspect the server log for `YouTube callback error:` output.
+
+---
+
 ## 3️⃣ API Issues
+
+### "ENCRYPTION_KEY must be exactly 32 characters long"
+
+**Error**:
+```text
+Error: ENCRYPTION_KEY must be exactly 32 characters long
+```
+
+**Why it happens**:
+
+Some setups use a 64-character hex string for a 32-byte AES key. That is valid, but strict length checks that only allow 32 characters will reject it.
+
+**Solution**:
+
+Accept either:
+- a 32-character raw string, or
+- a 64-character hex string
+
+Example valid key:
+```bash
+ENCRYPTION_KEY="4c020e38b37054ed5e3e6e44a3f9e90f994cbd86f06137460c02a55a977ca4cb"
+```
+
+After updating validation logic, restart the dev server:
+```bash
+npm run dev
+```
+
+---
 
 ### "YouTube API Quota Exceeded"
 

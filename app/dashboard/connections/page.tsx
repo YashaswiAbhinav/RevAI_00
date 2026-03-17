@@ -2,6 +2,7 @@
 
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
+import { useSearchParams } from 'next/navigation'
 import { useEffect, useState } from 'react'
 
 interface Connection {
@@ -18,8 +19,26 @@ interface Connection {
 export default function ConnectionsPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [connections, setConnections] = useState<Connection[]>([])
   const [loading, setLoading] = useState(true)
+
+  const error = searchParams.get('error')
+  const success = searchParams.get('success')
+
+  const errorMessages: Record<string, string> = {
+    oauth_failed: 'Google rejected the YouTube authorization request.',
+    missing_params: 'Google returned an incomplete callback. Please try again.',
+    user_not_found: 'Your session could not be matched to a local user.',
+    token_exchange_failed: 'Google authorization succeeded, but token exchange failed.',
+    no_youtube_channel: 'This Google account does not appear to have a YouTube channel available for this app.',
+    insufficient_permissions: 'The app received a token, but YouTube permissions were not sufficient.',
+    connection_failed: 'YouTube connection failed after the callback. Check the server log for details.',
+  }
+
+  const successMessages: Record<string, string> = {
+    youtube_connected: 'YouTube connected successfully.',
+  }
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -89,6 +108,18 @@ export default function ConnectionsPage() {
           Connect your social media accounts to start monitoring comments.
         </p>
       </div>
+
+      {error && (
+        <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          {errorMessages[error] || `Connection error: ${error}`}
+        </div>
+      )}
+
+      {success && (
+        <div className="rounded-md border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
+          {successMessages[success] || success}
+        </div>
+      )}
 
       {/* Connection Cards */}
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
