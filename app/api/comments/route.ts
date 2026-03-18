@@ -77,7 +77,7 @@ export async function GET(request: NextRequest) {
           (data.sentiment as unknown)
         ),
         aiReply: data.generatedReply?.text || '',
-        status: data.status || 'pending',
+        status: (['pending','classified','ready_to_post','replied','failed','rejected'].includes(data.status) ? data.status : 'pending'),
       }
     })
 

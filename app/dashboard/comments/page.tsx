@@ -356,7 +356,8 @@ export default function CommentsPage() {
                     )}
 
                     <div className="flex space-x-3">
-                      {!comment.aiReply && (
+                      {/* Generate button: only for pending/classified with no reply yet */}
+                      {!comment.aiReply && (comment.status === 'pending' || comment.status === 'classified') && (
                         <button
                           onClick={() => generateAIReply(comment.id)}
                           disabled={generating === comment.id}
@@ -378,13 +379,14 @@ export default function CommentsPage() {
                         </button>
                       )}
 
+                      {/* Approve/Reject: only when a reply exists AND status is pending or classified */}
                       {comment.aiReply && (comment.status === 'pending' || comment.status === 'classified') && (
                         <>
                           <button
                             onClick={() => approveReply(comment.id)}
-                          disabled={approving === comment.id}
-                          className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50"
-                        >
+                            disabled={approving === comment.id}
+                            className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50"
+                          >
                             {approving === comment.id ? 'Approving...' : 'Approve For Posting'}
                           </button>
                           <button
@@ -396,13 +398,35 @@ export default function CommentsPage() {
                         </>
                       )}
 
+                      {/* Queued indicator */}
                       {comment.status === 'ready_to_post' && (
+                        <span className="inline-flex items-center px-3 py-2 text-sm text-blue-600">
+                          <svg className="-ml-0.5 mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          Queued for posting
+                        </span>
+                      )}
+
+                      {/* Posted indicator */}
+                      {comment.status === 'replied' && (
                         <span className="inline-flex items-center px-3 py-2 text-sm text-green-600">
                           <svg className="-ml-0.5 mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                           </svg>
-                          Queued for posting
+                          Posted
                         </span>
+                      )}
+
+                      {/* Failed: allow regenerate */}
+                      {comment.status === 'failed' && (
+                        <button
+                          onClick={() => generateAIReply(comment.id)}
+                          disabled={generating === comment.id}
+                          className="inline-flex items-center px-3 py-2 border border-orange-300 shadow-sm text-sm leading-4 font-medium rounded-md text-orange-700 bg-white hover:bg-orange-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 disabled:opacity-50"
+                        >
+                          {generating === comment.id ? 'Retrying...' : 'Retry'}
+                        </button>
                       )}
                     </div>
                   </div>

@@ -364,6 +364,9 @@ def save_comment_to_firestore(user_id: str, comment_data: Dict[str, Any]):
         db = get_firestore_db()
         doc_id = f"{comment_data.get('platform')}_{comment_data.get('id')}"
         
+        doc_ref = db.collection('comments').document(doc_id)
+        existing = doc_ref.get()
+
         doc_data = {
             'userId': user_id,
             'connectionId': comment_data.get('connectionId'),
@@ -372,13 +375,16 @@ def save_comment_to_firestore(user_id: str, comment_data: Dict[str, Any]):
             'text': comment_data.get('text'),
             'author': comment_data.get('author', {}),
             'contentId': comment_data.get('contentId'),
-            'status': comment_data.get('status', 'pending'),
             'publishedAt': comment_data.get('publishedAt'),
             'fetchedAt': datetime.now(),
             'updatedAt': datetime.now(),
         }
-        
-        db.collection('comments').document(doc_id).set(doc_data, merge=True)
+
+        # Only set status on new documents — never overwrite an existing status
+        if not existing.exists:
+            doc_data['status'] = comment_data.get('status', 'pending')
+
+        doc_ref.set(doc_data, merge=True)
     except Exception as e:
         logger.error(f"Failed to save comment to Firestore: {e}")
         raise

@@ -163,9 +163,26 @@
 
 ## 📝 Notes & Decisions
 
-### 2026-03-18
+### 2026-03-18 — Comments showing as pending after being posted
 
-- **Fix**: Monitored content not persisting visually on `dashboard/content` page.
+- **Root Cause**: Two bugs working together:
+  1. `save_comment_to_firestore` in `airflow/tasks/helpers.py` always wrote `status: 'pending'` on every fetch run (via `merge=True`), overwriting `replied`/`ready_to_post` statuses set by the post DAG.
+  2. `app/api/comments/route.ts` used `data.status || 'pending'` — if `data.status` was an empty string or any falsy value, it would fall back to `'pending'`.
+- **Fix**:
+  - `helpers.py`: Only set `status` on new documents (when `doc.exists` is false). Existing documents keep their current status on re-fetch.
+  - `route.ts`: Replaced `|| 'pending'` with an explicit allowlist check — only falls back to `'pending'` if the value is not one of the 6 valid statuses.
+- **Files Changed**: `airflow/tasks/helpers.py`, `app/api/comments/route.ts`
+- **Impact**: Comments that have been posted/queued/rejected will no longer revert to `pending` after the next Airflow fetch run.
+
+### 2026-03-18 — Comments action button fix
+
+- **Fix**: Comments page showing Approve/Reject buttons on already-posted/queued comments.
+- **Root Cause**: Approve/Reject condition `comment.aiReply && (pending || classified)` was correct in theory, but the Generate button was gated only on `!comment.aiReply` — meaning any comment with a stored reply but a terminal status (replied, ready_to_post, rejected) had no explicit rendering path, causing edge-case leakage.
+- **Solution**: Replaced all action conditions with explicit per-status branches: Generate only for `pending`/`classified` with no reply; Approve+Reject only for `pending`/`classified` with a reply; clock icon for `ready_to_post`; checkmark for `replied`; Retry for `failed`; nothing for `rejected`.
+- **Files Changed**: `app/dashboard/comments/page.tsx`
+- **Impact**: Each comment shows exactly the right action(s) for its current state with no leakage.
+
+### 2026-03-18 — Monitored content persistence fix
 - **Root Cause**: Two issues — (1) `isMonitored` flag on the content list was only set optimistically and not re-synced from DB after toggle; (2) Prisma enum `YOUTUBE` was being compared against lowercase platform strings, causing all items to appear unmonitored after reload.
 - **Solution**: `fetchContent` now fetches `/api/content` and `/api/content/monitored` in parallel and uses the monitored list as source of truth for `isMonitored`. Toggle now calls `refreshMonitoredContent()` which syncs both lists from DB. `/api/content/monitored` now normalizes platform to lowercase.
 - **Files Changed**:
