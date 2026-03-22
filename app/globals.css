@@ -57,3 +57,12 @@
     @apply bg-background text-foreground;
   }
 }
+
+@layer components {
+  .gradient-card {
+    border: 1px solid transparent;
+    background:
+      linear-gradient(hsl(var(--card)), hsl(var(--card))) padding-box,
+      linear-gradient(135deg, rgba(59, 130, 246, 0.3), rgba(168, 85, 247, 0.25), rgba(236, 72, 153, 0.3)) border-box;
+  }
+}

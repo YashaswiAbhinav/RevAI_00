@@ -72,8 +72,8 @@ export default function ReportsPage() {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Reports & Analytics</h1>
-          <p className="mt-1 text-sm text-gray-600">
+          <h1 className="text-2xl font-bold text-foreground">Reports & Analytics</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
             Insights into your comment engagement and AI performance.
           </p>
         </div>
@@ -85,8 +85,8 @@ export default function ReportsPage() {
               onClick={() => setTimeRange(range)}
               className={`px-3 py-2 text-sm font-medium rounded-md ${
                 timeRange === range
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-white text-gray-700 border border-gray-300 hover:bg-gray-50'
+                  ? 'bg-primary text-primary-foreground'
+                  : 'bg-card text-foreground border border-border hover:bg-muted'
               }`}
             >
               {range === '7d' ? '7 Days' : range === '30d' ? '30 Days' : '90 Days'}
@@ -97,24 +97,24 @@ export default function ReportsPage() {
 
       {loading ? (
         <div className="flex items-center justify-center py-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-          <span className="ml-2 text-sm text-gray-600">Loading reports...</span>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          <span className="ml-2 text-sm text-muted-foreground">Loading reports...</span>
         </div>
       ) : reportData ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {/* Total Comments */}
-          <div className="bg-white overflow-hidden shadow rounded-lg">
+          <div className="bg-card overflow-hidden shadow rounded-lg gradient-card">
             <div className="p-5">
               <div className="flex items-center">
                 <div className="flex-shrink-0">
-                  <svg className="h-6 w-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className="h-6 w-6 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                   </svg>
                 </div>
                 <div className="ml-5 w-0 flex-1">
                   <dl>
-                    <dt className="text-sm font-medium text-gray-500 truncate">Total Comments</dt>
-                    <dd className="text-lg font-medium text-gray-900">{reportData.totalComments}</dd>
+                    <dt className="text-sm font-medium text-muted-foreground truncate">Total Comments</dt>
+                    <dd className="text-lg font-medium text-foreground">{reportData.totalComments}</dd>
                   </dl>
                 </div>
               </div>
@@ -122,104 +122,104 @@ export default function ReportsPage() {
           </div>
 
           {/* Sentiment Breakdown */}
-          <div className="bg-white overflow-hidden shadow rounded-lg">
+          <div className="bg-card overflow-hidden shadow rounded-lg gradient-card">
             <div className="p-5">
-              <h3 className="text-sm font-medium text-gray-500">Sentiment Breakdown</h3>
+              <h3 className="text-sm font-medium text-muted-foreground">Sentiment Breakdown</h3>
               <div className="mt-3 space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-green-600">Positive</span>
-                  <span className="text-sm font-medium">{reportData.sentimentBreakdown.positive}%</span>
+                  <span className="text-sm text-green-400">Positive</span>
+                  <span className="text-sm font-medium text-foreground">{reportData.sentimentBreakdown.positive}%</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-600">Neutral</span>
-                  <span className="text-sm font-medium">{reportData.sentimentBreakdown.neutral}%</span>
+                  <span className="text-sm text-muted-foreground">Neutral</span>
+                  <span className="text-sm font-medium text-foreground">{reportData.sentimentBreakdown.neutral}%</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-red-600">Negative</span>
-                  <span className="text-sm font-medium">{reportData.sentimentBreakdown.negative}%</span>
+                  <span className="text-sm text-red-400">Negative</span>
+                  <span className="text-sm font-medium text-foreground">{reportData.sentimentBreakdown.negative}%</span>
                 </div>
               </div>
             </div>
           </div>
 
           {/* Platform Stats */}
-          <div className="bg-white overflow-hidden shadow rounded-lg">
+          <div className="bg-card overflow-hidden shadow rounded-lg gradient-card">
             <div className="p-5">
-              <h3 className="text-sm font-medium text-gray-500">Platform Distribution</h3>
+              <h3 className="text-sm font-medium text-muted-foreground">Platform Distribution</h3>
               <div className="mt-3 space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-red-600">YouTube</span>
-                  <span className="text-sm font-medium">{reportData.platformStats.youtube}</span>
+                  <span className="text-sm text-red-400">YouTube</span>
+                  <span className="text-sm font-medium text-foreground">{reportData.platformStats.youtube}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-pink-600">Instagram</span>
-                  <span className="text-sm font-medium">{reportData.platformStats.instagram}</span>
+                  <span className="text-sm text-pink-400">Instagram</span>
+                  <span className="text-sm font-medium text-foreground">{reportData.platformStats.instagram}</span>
                 </div>
               </div>
             </div>
           </div>
 
           {/* Top Questions */}
-          <div className="bg-white overflow-hidden shadow rounded-lg md:col-span-2">
+          <div className="bg-card overflow-hidden shadow rounded-lg gradient-card md:col-span-2">
             <div className="p-5">
-              <h3 className="text-sm font-medium text-gray-500">Top Questions</h3>
+              <h3 className="text-sm font-medium text-muted-foreground">Top Questions</h3>
               <div className="mt-3">
                 {reportData.topQuestions.length > 0 ? (
                   <ul className="space-y-2">
                     {reportData.topQuestions.map((question, index) => (
-                      <li key={index} className="text-sm text-gray-900">• {question}</li>
+                      <li key={index} className="text-sm text-foreground">• {question}</li>
                     ))}
                   </ul>
                 ) : (
-                  <p className="text-sm text-gray-500">No questions identified yet.</p>
+                  <p className="text-sm text-muted-foreground">No questions identified yet.</p>
                 )}
               </div>
             </div>
           </div>
 
           {/* Top Concerns */}
-          <div className="bg-white overflow-hidden shadow rounded-lg">
+          <div className="bg-card overflow-hidden shadow rounded-lg gradient-card">
             <div className="p-5">
-              <h3 className="text-sm font-medium text-gray-500">Top Concerns</h3>
+              <h3 className="text-sm font-medium text-muted-foreground">Top Concerns</h3>
               <div className="mt-3">
                 {reportData.topConcerns.length > 0 ? (
                   <ul className="space-y-2">
                     {reportData.topConcerns.map((concern, index) => (
-                      <li key={index} className="text-sm text-gray-900">• {concern}</li>
+                      <li key={index} className="text-sm text-foreground">• {concern}</li>
                     ))}
                   </ul>
                 ) : (
-                  <p className="text-sm text-gray-500">No concerns identified yet.</p>
+                  <p className="text-sm text-muted-foreground">No concerns identified yet.</p>
                 )}
               </div>
             </div>
           </div>
 
           {/* Recent Activity */}
-          <div className="bg-white overflow-hidden shadow rounded-lg md:col-span-3">
+          <div className="bg-card overflow-hidden shadow rounded-lg gradient-card md:col-span-3">
             <div className="p-5">
-              <h3 className="text-sm font-medium text-gray-500">Recent Activity</h3>
+              <h3 className="text-sm font-medium text-muted-foreground">Recent Activity</h3>
               <div className="mt-3">
                 {reportData.recentActivity.length > 0 ? (
                   <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
                     {reportData.recentActivity.map((activity) => (
-                      <div key={activity.date} className="rounded-lg border border-gray-200 bg-gray-50 p-4">
-                        <p className="text-sm font-medium text-gray-900">
+                        <div key={activity.date} className="rounded-lg border border-border bg-muted p-4">
+                          <p className="text-sm font-medium text-foreground">
                           {new Date(`${activity.date}T00:00:00`).toLocaleDateString()}
                         </p>
                         <div className="mt-3 flex items-center justify-between text-sm">
-                          <span className="text-gray-600">Comments</span>
-                          <span className="font-medium text-gray-900">{activity.comments}</span>
+                            <span className="text-muted-foreground">Comments</span>
+                            <span className="font-medium text-foreground">{activity.comments}</span>
                         </div>
                         <div className="mt-2 flex items-center justify-between text-sm">
-                          <span className="text-gray-600">Replies Posted</span>
-                          <span className="font-medium text-gray-900">{activity.replies}</span>
+                            <span className="text-muted-foreground">Replies Posted</span>
+                            <span className="font-medium text-foreground">{activity.replies}</span>
                         </div>
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <p className="text-sm text-gray-500">No recent activity in this date range yet.</p>
+                    <p className="text-sm text-muted-foreground">No recent activity in this date range yet.</p>
                 )}
               </div>
             </div>

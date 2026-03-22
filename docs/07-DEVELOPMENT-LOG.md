@@ -163,6 +163,13 @@
 
 ## 📝 Notes & Decisions
 
+### 2026-03-22 — UI-only change policy for AI edits
+
+- **Decision**: For UI tasks, limit modifications to UI files only.
+- **Constraint**: Do not change backend/API/connectivity/integration code unless explicitly requested.
+- **Logging Rule**: Record AI-driven updates in `docs/AI-LOG.md`.
+- **Impact**: Reduces risk of unintended changes to comment fetching, OAuth connections, and automation pipelines.
+
 ### 2026-03-18 — Comments showing as pending after being posted
 
 - **Root Cause**: Two bugs working together:

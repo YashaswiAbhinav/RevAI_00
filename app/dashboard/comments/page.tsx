@@ -231,9 +231,9 @@ export default function CommentsPage() {
   const getSentimentColor = (sentiment?: string) => {
     switch (sentiment) {
       case 'positive': return 'bg-green-100 text-green-800'
-      case 'neutral': return 'bg-gray-100 text-gray-800'
+      case 'neutral': return 'bg-muted text-muted-foreground'
       case 'negative': return 'bg-red-100 text-red-800'
-      default: return 'bg-gray-100 text-gray-800'
+      default: return 'bg-muted text-muted-foreground'
     }
   }
 
@@ -245,7 +245,7 @@ export default function CommentsPage() {
       case 'replied': return 'bg-green-100 text-green-800'
       case 'rejected': return 'bg-red-100 text-red-800'
       case 'failed': return 'bg-red-100 text-red-800'
-      default: return 'bg-gray-100 text-gray-800'
+      default: return 'bg-muted text-muted-foreground'
     }
   }
 
@@ -268,8 +268,8 @@ export default function CommentsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Comments Management</h1>
-        <p className="mt-1 text-sm text-gray-600">
+        <h1 className="text-2xl font-bold text-foreground">Comments Management</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
           Review comments from your monitored content and track AI-generated replies.
         </p>
         {autoReplyEnabled && (
@@ -286,17 +286,17 @@ export default function CommentsPage() {
       </div>
 
       {/* Filters */}
-      <div className="bg-white shadow rounded-lg p-6">
+      <div className="bg-card shadow rounded-lg gradient-card p-6">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div>
-            <label htmlFor="platform" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="platform" className="block text-sm font-medium text-foreground mb-1">
               Platform
             </label>
             <select
               id="platform"
               value={filters.platform}
               onChange={(e) => setFilters(prev => ({ ...prev, platform: e.target.value }))}
-              className="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+              className="w-full rounded-md border border-border bg-card text-foreground shadow-sm focus:ring-blue-500 focus:border-blue-500"
             >
               <option value="">All Platforms</option>
               <option value="youtube">YouTube</option>
@@ -305,14 +305,14 @@ export default function CommentsPage() {
           </div>
 
           <div>
-            <label htmlFor="sentiment" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="sentiment" className="block text-sm font-medium text-foreground mb-1">
               Sentiment
             </label>
             <select
               id="sentiment"
               value={filters.sentiment}
               onChange={(e) => setFilters(prev => ({ ...prev, sentiment: e.target.value }))}
-              className="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+              className="w-full rounded-md border border-border bg-card text-foreground shadow-sm focus:ring-blue-500 focus:border-blue-500"
             >
               <option value="">All Sentiments</option>
               <option value="positive">Positive</option>
@@ -322,14 +322,14 @@ export default function CommentsPage() {
           </div>
 
           <div>
-            <label htmlFor="status" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="status" className="block text-sm font-medium text-foreground mb-1">
               Status
             </label>
             <select
               id="status"
               value={filters.status}
               onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value }))}
-              className="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+              className="w-full rounded-md border border-border bg-card text-foreground shadow-sm focus:ring-blue-500 focus:border-blue-500"
             >
               <option value="">All Status</option>
               <option value="pending">Pending</option>
@@ -342,7 +342,7 @@ export default function CommentsPage() {
           </div>
 
           <div>
-            <label htmlFor="search" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="search" className="block text-sm font-medium text-foreground mb-1">
               Search
             </label>
             <input
@@ -351,28 +351,28 @@ export default function CommentsPage() {
               value={filters.search}
               onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
               placeholder="Search comments..."
-              className="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+              className="w-full rounded-md border border-border bg-card text-foreground shadow-sm focus:ring-blue-500 focus:border-blue-500"
             />
           </div>
         </div>
       </div>
 
       {/* Comments List */}
-      <div className="bg-white shadow rounded-lg">
+      <div className="bg-card shadow rounded-lg gradient-card">
         {loading ? (
           <div className="flex items-center justify-center py-12">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-            <span className="ml-2 text-sm text-gray-600">Loading comments...</span>
+            <span className="ml-2 text-sm text-muted-foreground">Loading comments...</span>
           </div>
         ) : comments.length === 0 ? (
           <div className="text-center py-12">
-            <p className="text-gray-500">No comments found matching your filters.</p>
-            <p className="text-sm text-gray-400 mt-1">
+            <p className="text-muted-foreground">No comments found matching your filters.</p>
+            <p className="text-sm text-muted-foreground mt-1">
               Make sure you have connected accounts and selected content to monitor.
             </p>
           </div>
         ) : (
-          <div className="divide-y divide-gray-200">
+          <div className="divide-y divide-border">
             {comments.map((comment) => (
               <div key={comment.id} className="p-6">
                 <div className="flex items-start justify-between">
@@ -386,14 +386,14 @@ export default function CommentsPage() {
                         />
                       )}
                       <div>
-                        <p className="text-sm font-medium text-gray-900">{comment.author}</p>
-                        <p className="text-xs text-gray-500">
+                        <p className="text-sm font-medium text-foreground">{comment.author}</p>
+                        <p className="text-xs text-muted-foreground">
                           {new Date(comment.publishedAt).toLocaleString()} • {comment.platform} • {comment.contentTitle}
                         </p>
                       </div>
                     </div>
 
-                    <p className="text-gray-900 mb-3">{comment.text}</p>
+                    <p className="text-foreground mb-3">{comment.text}</p>
 
                     <div className="flex items-center space-x-2 mb-4">
                       {comment.sentiment && (
@@ -407,7 +407,7 @@ export default function CommentsPage() {
                     </div>
 
                     {comment.aiReply && (
-                      <div className="bg-blue-50 border border-blue-200 rounded-md p-4 mb-4">
+                      <div className="bg-muted border border-border rounded-md p-4 mb-4">
                         <div className="flex items-start">
                           <div className="flex-shrink-0">
                             <svg className="h-5 w-5 text-blue-400" viewBox="0 0 20 20" fill="currentColor">
@@ -415,8 +415,8 @@ export default function CommentsPage() {
                             </svg>
                           </div>
                           <div className="ml-3 flex-1">
-                            <h4 className="text-sm font-medium text-blue-800">AI Generated Reply</h4>
-                            <p className="text-sm text-blue-700 mt-1">{comment.aiReply}</p>
+                            <h4 className="text-sm font-medium text-foreground">AI Generated Reply</h4>
+                            <p className="text-sm text-muted-foreground mt-1">{comment.aiReply}</p>
                           </div>
                         </div>
                       </div>
@@ -428,7 +428,7 @@ export default function CommentsPage() {
                         <button
                           onClick={() => generateAIReply(comment.id)}
                           disabled={generating === comment.id}
-                          className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+                          className="inline-flex items-center px-3 py-2 border border-border shadow-sm text-sm leading-4 font-medium rounded-md text-foreground bg-card hover:bg-muted focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
                         >
                           {generating === comment.id ? (
                             <>
@@ -458,7 +458,7 @@ export default function CommentsPage() {
                           </button>
                           <button
                             onClick={() => rejectReply(comment.id)}
-                            className="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                            className="inline-flex items-center px-3 py-2 border border-border shadow-sm text-sm leading-4 font-medium rounded-md text-foreground bg-card hover:bg-muted focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
                           >
                             Reject
                           </button>
@@ -490,7 +490,7 @@ export default function CommentsPage() {
                         <button
                           onClick={() => generateAIReply(comment.id)}
                           disabled={generating === comment.id}
-                          className="inline-flex items-center px-3 py-2 border border-orange-300 shadow-sm text-sm leading-4 font-medium rounded-md text-orange-700 bg-white hover:bg-orange-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 disabled:opacity-50"
+                          className="inline-flex items-center px-3 py-2 border border-border shadow-sm text-sm leading-4 font-medium rounded-md text-orange-400 bg-card hover:bg-muted focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 disabled:opacity-50"
                         >
                           {generating === comment.id ? 'Retrying...' : 'Retry'}
                         </button>

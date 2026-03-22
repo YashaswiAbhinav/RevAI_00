@@ -122,8 +122,8 @@ export default function SettingsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
-        <p className="mt-1 text-sm text-gray-600">
+        <h1 className="text-2xl font-bold text-foreground">Settings</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
           Configure your AI reply preferences and automation settings.
         </p>
       </div>
@@ -141,45 +141,45 @@ export default function SettingsPage() {
       )}
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-        <div className="rounded-lg bg-white p-5 shadow">
-          <p className="text-sm text-gray-500">Connected Platforms</p>
-          <p className="mt-2 text-2xl font-semibold text-gray-900">{stats.connectedPlatforms}</p>
+        <div className="rounded-lg bg-card p-5 shadow gradient-card">
+          <p className="text-sm text-muted-foreground">Connected Platforms</p>
+          <p className="mt-2 text-2xl font-semibold text-foreground">{stats.connectedPlatforms}</p>
         </div>
-        <div className="rounded-lg bg-white p-5 shadow">
-          <p className="text-sm text-gray-500">Monitored Content</p>
-          <p className="mt-2 text-2xl font-semibold text-gray-900">{stats.monitoredContent}</p>
+        <div className="rounded-lg bg-card p-5 shadow gradient-card">
+          <p className="text-sm text-muted-foreground">Monitored Content</p>
+          <p className="mt-2 text-2xl font-semibold text-foreground">{stats.monitoredContent}</p>
         </div>
-        <div className="rounded-lg bg-white p-5 shadow">
-          <p className="text-sm text-gray-500">Comments Awaiting Review</p>
-          <p className="mt-2 text-2xl font-semibold text-gray-900">{stats.commentsAwaitingReview}</p>
+        <div className="rounded-lg bg-card p-5 shadow gradient-card">
+          <p className="text-sm text-muted-foreground">Comments Awaiting Review</p>
+          <p className="mt-2 text-2xl font-semibold text-foreground">{stats.commentsAwaitingReview}</p>
         </div>
       </div>
 
-      <div className="bg-white shadow rounded-lg">
+      <div className="bg-card shadow rounded-lg gradient-card">
         <div className="px-4 py-5 sm:p-6">
           {loadingSettings ? (
             <div className="flex items-center justify-center py-10">
               <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-              <span className="ml-2 text-sm text-gray-600">Loading settings...</span>
+              <span className="ml-2 text-sm text-muted-foreground">Loading settings...</span>
             </div>
           ) : (
             <div className="space-y-6">
               {/* AI Tone */}
               <div>
-                <label htmlFor="aiTone" className="block text-sm font-medium text-gray-700">
+                <label htmlFor="aiTone" className="block text-sm font-medium text-foreground">
                   AI Reply Tone
                 </label>
                 <select
                   id="aiTone"
                   value={settings.aiTone}
                   onChange={(e) => handleInputChange('aiTone', e.target.value)}
-                  className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
+                  className="mt-1 block w-full rounded-md border border-border bg-card px-3 py-2 text-base text-foreground focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                 >
                   <option value="professional">Professional</option>
                   <option value="friendly">Friendly</option>
                   <option value="casual">Casual</option>
                 </select>
-                <p className="mt-1 text-sm text-gray-500">
+                <p className="mt-1 text-sm text-muted-foreground">
                   Choose the tone for AI-generated replies.
                 </p>
               </div>
@@ -193,14 +193,14 @@ export default function SettingsPage() {
                   onChange={(e) => handleInputChange('autoReplyEnabled', e.target.checked)}
                   className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                 />
-                <label htmlFor="autoReplyEnabled" className="ml-2 block text-sm text-gray-900">
+                <label htmlFor="autoReplyEnabled" className="ml-2 block text-sm text-foreground">
                   Enable automatic replies (Phase 6 feature)
                 </label>
               </div>
 
               {/* Reply Delay */}
               <div>
-                <label htmlFor="replyDelay" className="block text-sm font-medium text-gray-700">
+                <label htmlFor="replyDelay" className="block text-sm font-medium text-foreground">
                   Reply Delay (minutes)
                 </label>
                 <input
@@ -210,16 +210,16 @@ export default function SettingsPage() {
                   onChange={(e) => handleInputChange('replyDelay', parseInt(e.target.value))}
                   min="0"
                   max="1440"
-                  className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  className="mt-1 block w-full rounded-md border border-border bg-card text-foreground shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                 />
-                <p className="mt-1 text-sm text-gray-500">
+                <p className="mt-1 text-sm text-muted-foreground">
                   Delay before posting AI-generated replies.
                 </p>
               </div>
 
               {/* Max Replies Per Hour */}
               <div>
-                <label htmlFor="maxRepliesPerHour" className="block text-sm font-medium text-gray-700">
+                <label htmlFor="maxRepliesPerHour" className="block text-sm font-medium text-foreground">
                   Max Replies Per Hour
                 </label>
                 <input
@@ -229,16 +229,16 @@ export default function SettingsPage() {
                   onChange={(e) => handleInputChange('maxRepliesPerHour', parseInt(e.target.value))}
                   min="1"
                   max="100"
-                  className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  className="mt-1 block w-full rounded-md border border-border bg-card text-foreground shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                 />
-                <p className="mt-1 text-sm text-gray-500">
+                <p className="mt-1 text-sm text-muted-foreground">
                   Maximum number of automated replies per hour to avoid spam detection.
                 </p>
               </div>
 
               {/* Business Context */}
               <div>
-                <label htmlFor="businessContext" className="block text-sm font-medium text-gray-700">
+                <label htmlFor="businessContext" className="block text-sm font-medium text-foreground">
                   Business Context
                 </label>
                 <textarea
@@ -246,17 +246,17 @@ export default function SettingsPage() {
                   value={settings.businessContext}
                   onChange={(e) => handleInputChange('businessContext', e.target.value)}
                   rows={4}
-                  className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  className="mt-1 block w-full rounded-md border border-border bg-card text-foreground shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                   placeholder="Describe your business, products, or services to help the AI generate more relevant replies..."
                 />
-                <p className="mt-1 text-sm text-gray-500">
+                <p className="mt-1 text-sm text-muted-foreground">
                   This context helps the AI understand your business for better replies.
                 </p>
               </div>
 
               {/* Notification Email */}
               <div>
-                <label htmlFor="notificationEmail" className="block text-sm font-medium text-gray-700">
+                <label htmlFor="notificationEmail" className="block text-sm font-medium text-foreground">
                   Notification Email
                 </label>
                 <input
@@ -264,10 +264,10 @@ export default function SettingsPage() {
                   id="notificationEmail"
                   value={settings.notificationEmail}
                   onChange={(e) => handleInputChange('notificationEmail', e.target.value)}
-                  className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  className="mt-1 block w-full rounded-md border border-border bg-card text-foreground shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                   placeholder="your@email.com"
                 />
-                <p className="mt-1 text-sm text-gray-500">
+                <p className="mt-1 text-sm text-muted-foreground">
                   Email address for important notifications and reports.
                 </p>
               </div>
@@ -287,10 +287,10 @@ export default function SettingsPage() {
       </div>
 
       {/* DAG Schedule Settings */}
-      <div className="bg-white shadow rounded-lg">
+      <div className="bg-card shadow rounded-lg gradient-card">
         <div className="px-4 py-5 sm:p-6">
-          <h3 className="text-lg leading-6 font-medium text-gray-900 mb-1">Automation Schedule</h3>
-          <p className="text-sm text-gray-500 mb-6">
+          <h3 className="text-lg leading-6 font-medium text-foreground mb-1">Automation Schedule</h3>
+          <p className="text-sm text-muted-foreground mb-6">
             Control how often each Airflow pipeline runs. Changes are saved to the database and synced to Airflow automatically. The new schedule takes effect on the next DAG parse (within ~30 seconds after saving).
           </p>
 
@@ -301,7 +301,7 @@ export default function SettingsPage() {
           ) : (
             <div className="space-y-6">
               <div>
-                <label htmlFor="fetchIntervalMinutes" className="block text-sm font-medium text-gray-700">
+                <label htmlFor="fetchIntervalMinutes" className="block text-sm font-medium text-foreground">
                   Fetch Comments Interval (minutes)
                 </label>
                 <input
@@ -311,15 +311,15 @@ export default function SettingsPage() {
                   onChange={(e) => handleInputChange('fetchIntervalMinutes', parseInt(e.target.value))}
                   min="5"
                   max="1440"
-                  className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  className="mt-1 block w-full rounded-md border border-border bg-card text-foreground shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                 />
-                <p className="mt-1 text-sm text-gray-500">
+                <p className="mt-1 text-sm text-muted-foreground">
                   How often to pull new comments from YouTube/Instagram. Default: 30 min.
                 </p>
               </div>
 
               <div>
-                <label htmlFor="processIntervalMinutes" className="block text-sm font-medium text-gray-700">
+                <label htmlFor="processIntervalMinutes" className="block text-sm font-medium text-foreground">
                   Process &amp; Generate Replies Interval (minutes)
                 </label>
                 <input
@@ -329,15 +329,15 @@ export default function SettingsPage() {
                   onChange={(e) => handleInputChange('processIntervalMinutes', parseInt(e.target.value))}
                   min="5"
                   max="1440"
-                  className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  className="mt-1 block w-full rounded-md border border-border bg-card text-foreground shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                 />
-                <p className="mt-1 text-sm text-gray-500">
+                <p className="mt-1 text-sm text-muted-foreground">
                   How often Gemini AI classifies comments and generates replies. Default: 60 min.
                 </p>
               </div>
 
               <div>
-                <label htmlFor="postIntervalMinutes" className="block text-sm font-medium text-gray-700">
+                <label htmlFor="postIntervalMinutes" className="block text-sm font-medium text-foreground">
                   Post Replies Interval (minutes)
                 </label>
                 <input
@@ -347,9 +347,9 @@ export default function SettingsPage() {
                   onChange={(e) => handleInputChange('postIntervalMinutes', parseInt(e.target.value))}
                   min="5"
                   max="1440"
-                  className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  className="mt-1 block w-full rounded-md border border-border bg-card text-foreground shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                 />
-                <p className="mt-1 text-sm text-gray-500">
+                <p className="mt-1 text-sm text-muted-foreground">
                   How often approved replies are posted back to platforms. Default: 15 min.
                 </p>
               </div>
@@ -369,29 +369,29 @@ export default function SettingsPage() {
       </div>
 
       {/* Account Settings */}
-      <div className="bg-white shadow rounded-lg">
+      <div className="bg-card shadow rounded-lg gradient-card">
         <div className="px-4 py-5 sm:p-6">
-          <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">Account Settings</h3>
+          <h3 className="text-lg leading-6 font-medium text-foreground mb-4">Account Settings</h3>
 
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700">Email</label>
-              <p className="mt-1 text-sm text-gray-900">{session?.user?.email}</p>
+              <label className="block text-sm font-medium text-foreground">Email</label>
+              <p className="mt-1 text-sm text-foreground">{session?.user?.email}</p>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700">Name</label>
-              <p className="mt-1 text-sm text-gray-900">{session?.user?.name}</p>
+              <label className="block text-sm font-medium text-foreground">Name</label>
+              <p className="mt-1 text-sm text-foreground">{session?.user?.name}</p>
             </div>
 
             <div className="pt-4">
               <button
                 disabled
-                className="inline-flex items-center px-3 py-2 border border-red-200 shadow-sm text-sm leading-4 font-medium rounded-md text-red-400 bg-white cursor-not-allowed"
+                className="inline-flex items-center px-3 py-2 border border-red-200 shadow-sm text-sm leading-4 font-medium rounded-md text-red-400 bg-card cursor-not-allowed"
               >
                 Delete Account Coming Soon
               </button>
-              <p className="mt-1 text-xs text-gray-500">
+              <p className="mt-1 text-xs text-muted-foreground">
                 Account deletion has not been implemented yet, so this control is intentionally disabled.
               </p>
             </div>

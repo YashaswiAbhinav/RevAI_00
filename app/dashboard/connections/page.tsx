@@ -104,8 +104,8 @@ export default function ConnectionsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Platform Connections</h1>
-        <p className="mt-1 text-sm text-gray-600">
+        <h1 className="text-2xl font-bold text-foreground">Platform Connections</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
           Connect your social media accounts to start monitoring comments.
         </p>
       </div>
@@ -125,7 +125,7 @@ export default function ConnectionsPage() {
       {/* Connection Cards */}
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {/* YouTube Card */}
-        <div className="bg-white overflow-hidden shadow rounded-lg">
+        <div className="bg-card overflow-hidden shadow rounded-lg gradient-card">
           <div className="p-6">
             <div className="flex items-center">
               <div className="flex-shrink-0">
@@ -136,8 +136,8 @@ export default function ConnectionsPage() {
                 </div>
               </div>
               <div className="ml-4">
-                <h3 className="text-lg font-medium text-gray-900">YouTube</h3>
-                <p className="text-sm text-gray-500">Connect your YouTube channel</p>
+                <h3 className="text-lg font-medium text-foreground">YouTube</h3>
+                <p className="text-sm text-muted-foreground">Connect your YouTube channel</p>
               </div>
             </div>
 
@@ -148,7 +148,7 @@ export default function ConnectionsPage() {
                   return (
                     <div className="space-y-3">
                       <div className="flex items-center justify-between">
-                        <span className="text-sm text-gray-600">
+                        <span className="text-sm text-muted-foreground">
                           {youtubeConnection.channelName}
                         </span>
                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
@@ -162,7 +162,7 @@ export default function ConnectionsPage() {
                         </span>
                       </div>
 
-                      <div className="text-xs text-gray-500 space-y-1">
+                      <div className="text-xs text-muted-foreground space-y-1">
                         <div>Read Comments: {youtubeConnection.permissions.canReadComments ? '✅' : '❌'}</div>
                         <div>Post Replies: {youtubeConnection.permissions.canPostReplies ? '✅' : '❌'}</div>
                       </div>
@@ -191,7 +191,7 @@ export default function ConnectionsPage() {
         </div>
 
         {/* Instagram Card */}
-        <div className="bg-white overflow-hidden shadow rounded-lg">
+        <div className="bg-card overflow-hidden shadow rounded-lg gradient-card">
           <div className="p-6">
             <div className="flex items-center">
               <div className="flex-shrink-0">
@@ -202,8 +202,8 @@ export default function ConnectionsPage() {
                 </div>
               </div>
               <div className="ml-4">
-                <h3 className="text-lg font-medium text-gray-900">Instagram</h3>
-                <p className="text-sm text-gray-500">Connect your Instagram account</p>
+                <h3 className="text-lg font-medium text-foreground">Instagram</h3>
+                <p className="text-sm text-muted-foreground">Connect your Instagram account</p>
               </div>
             </div>
 
@@ -214,7 +214,7 @@ export default function ConnectionsPage() {
                   return (
                     <div className="space-y-3">
                       <div className="flex items-center justify-between">
-                        <span className="text-sm text-gray-600">
+                        <span className="text-sm text-muted-foreground">
                           @{instagramConnection.channelName}
                         </span>
                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
@@ -228,7 +228,7 @@ export default function ConnectionsPage() {
                         </span>
                       </div>
 
-                      <div className="text-xs text-gray-500 space-y-1">
+                      <div className="text-xs text-muted-foreground space-y-1">
                         <div>Read Comments: {instagramConnection.permissions.canReadComments ? '✅' : '❌'}</div>
                         <div>Post Replies: {instagramConnection.permissions.canPostReplies ? '✅' : '❌'}</div>
                       </div>
@@ -257,7 +257,7 @@ export default function ConnectionsPage() {
         </div>
 
         {/* Facebook Card (Coming Soon) */}
-        <div className="bg-white overflow-hidden shadow rounded-lg opacity-50">
+        <div className="bg-card overflow-hidden shadow rounded-lg gradient-card opacity-50">
           <div className="p-6">
             <div className="flex items-center">
               <div className="flex-shrink-0">
@@ -268,8 +268,8 @@ export default function ConnectionsPage() {
                 </div>
               </div>
               <div className="ml-4">
-                <h3 className="text-lg font-medium text-gray-900">Facebook</h3>
-                <p className="text-sm text-gray-500">Coming soon</p>
+                <h3 className="text-lg font-medium text-foreground">Facebook</h3>
+                <p className="text-sm text-muted-foreground">Coming soon</p>
               </div>
             </div>
 

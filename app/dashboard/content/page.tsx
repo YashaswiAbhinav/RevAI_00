@@ -176,22 +176,22 @@ export default function ContentPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Content Selection</h1>
-        <p className="mt-1 text-sm text-gray-600">
+        <h1 className="text-2xl font-bold text-foreground">Content Selection</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
           Choose which videos and posts you want to monitor for comments.
         </p>
       </div>
 
       {/* Connection Selector */}
-      <div className="bg-white shadow rounded-lg p-6">
-        <label htmlFor="connection" className="block text-sm font-medium text-gray-700 mb-2">
+      <div className="bg-card shadow rounded-lg gradient-card p-6">
+        <label htmlFor="connection" className="block text-sm font-medium text-foreground mb-2">
           Select Platform Connection
         </label>
         <select
           id="connection"
           value={selectedConnection}
           onChange={(e) => handleConnectionChange(e.target.value)}
-          className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
+          className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-border bg-card text-foreground focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
         >
           <option value="">Choose a connection...</option>
           {connections.map((connection) => (
@@ -202,13 +202,13 @@ export default function ContentPage() {
         </select>
       </div>
 
-      <div className="bg-white shadow rounded-lg p-6">
-        <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
+      <div className="bg-card shadow rounded-lg gradient-card p-6">
+        <h3 className="text-lg leading-6 font-medium text-foreground mb-4">
           Currently Monitored Content
         </h3>
 
         {monitoredContent.length === 0 ? (
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-muted-foreground">
             No content is currently being monitored.
           </p>
         ) : (
@@ -216,13 +216,13 @@ export default function ContentPage() {
             {monitoredContent.map((item) => (
               <div
                 key={item.id}
-                className="flex items-center justify-between rounded-lg border border-gray-200 px-4 py-3"
+                className="flex items-center justify-between rounded-lg border border-border bg-muted px-4 py-3"
               >
                 <div>
-                  <p className="text-sm font-medium text-gray-900">
+                  <p className="text-sm font-medium text-foreground">
                     {item.title || item.platformContentId}
                   </p>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-muted-foreground">
                     {item.platform.charAt(0).toUpperCase() + item.platform.slice(1).toLowerCase()} • {item.platformContentId}
                   </p>
                 </div>
@@ -237,25 +237,25 @@ export default function ContentPage() {
 
       {/* Content List */}
       {selectedConnection && (
-        <div className="bg-white shadow rounded-lg">
+        <div className="bg-card shadow rounded-lg gradient-card">
           <div className="px-4 py-5 sm:p-6">
-            <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
+            <h3 className="text-lg leading-6 font-medium text-foreground mb-4">
               Available Content
             </h3>
 
             {loading ? (
               <div className="flex items-center justify-center py-8">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                <span className="ml-2 text-sm text-gray-600">Loading content...</span>
+                <span className="ml-2 text-sm text-muted-foreground">Loading content...</span>
               </div>
             ) : content.length === 0 ? (
-              <p className="text-gray-500 text-center py-8">
+              <p className="text-muted-foreground text-center py-8">
                 No content found for this connection.
               </p>
             ) : (
               <div className="space-y-4">
                 {content.map((item) => (
-                  <div key={item.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+                  <div key={item.id} className="flex items-center justify-between p-4 border border-border bg-muted rounded-lg">
                     <div className="flex items-center space-x-4">
                       {item.thumbnailUrl && (
                         <img
@@ -265,13 +265,13 @@ export default function ContentPage() {
                         />
                       )}
                       <div className="flex-1 min-w-0">
-                        <h4 className="text-sm font-medium text-gray-900 truncate">
+                        <h4 className="text-sm font-medium text-foreground truncate">
                           {item.title}
                         </h4>
-                        <p className="text-sm text-gray-500 truncate">
+                        <p className="text-sm text-muted-foreground truncate">
                           {item.description}
                         </p>
-                        <p className="text-xs text-gray-400">
+                        <p className="text-xs text-muted-foreground">
                           {new Date(item.publishedAt).toLocaleDateString()}
                         </p>
                       </div>
@@ -281,7 +281,7 @@ export default function ContentPage() {
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                         item.isMonitored
                           ? 'bg-green-100 text-green-800'
-                          : 'bg-gray-100 text-gray-800'
+                          : 'bg-muted text-muted-foreground'
                       }`}>
                         {item.isMonitored ? 'Monitored' : 'Not Monitored'}
                       </span>
