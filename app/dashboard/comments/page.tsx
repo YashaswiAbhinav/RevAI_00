@@ -25,6 +25,24 @@ interface FilterOptions {
   search: string
 }
 
+const decodeHtmlEntities = (apiText?: string) => {
+  if (!apiText) return ''
+
+  if (typeof window !== 'undefined' && typeof document !== 'undefined') {
+    const textarea = document.createElement('textarea')
+    textarea.innerHTML = apiText
+    const decoded = textarea.value
+    return decoded
+  }
+
+  return apiText
+    .replace(/&#39;/g, "'")
+    .replace(/&quot;/g, '"')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+}
+
 export default function CommentsPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
@@ -388,12 +406,12 @@ export default function CommentsPage() {
                       <div>
                         <p className="text-sm font-medium text-foreground">{comment.author}</p>
                         <p className="text-xs text-muted-foreground">
-                          {new Date(comment.publishedAt).toLocaleString()} • {comment.platform} • {comment.contentTitle}
+                          {new Date(comment.publishedAt).toLocaleString()} • {comment.platform} • {decodeHtmlEntities(comment.contentTitle)}
                         </p>
                       </div>
                     </div>
 
-                    <p className="text-foreground mb-3">{comment.text}</p>
+                    <p className="text-foreground mb-3">{decodeHtmlEntities(comment.text)}</p>
 
                     <div className="flex items-center space-x-2 mb-4">
                       {comment.sentiment && (
@@ -416,7 +434,7 @@ export default function CommentsPage() {
                           </div>
                           <div className="ml-3 flex-1">
                             <h4 className="text-sm font-medium text-foreground">AI Generated Reply</h4>
-                            <p className="text-sm text-muted-foreground mt-1">{comment.aiReply}</p>
+                            <p className="text-sm text-muted-foreground mt-1">{decodeHtmlEntities(comment.aiReply)}</p>
                           </div>
                         </div>
                       </div>

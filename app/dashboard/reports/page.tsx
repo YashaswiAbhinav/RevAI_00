@@ -24,6 +24,24 @@ interface ReportData {
   }>
 }
 
+const decodeHtmlEntities = (apiText?: string) => {
+  if (!apiText) return ''
+
+  if (typeof window !== 'undefined' && typeof document !== 'undefined') {
+    const textarea = document.createElement('textarea')
+    textarea.innerHTML = apiText
+    const decoded = textarea.value
+    return decoded
+  }
+
+  return apiText
+    .replace(/&#39;/g, "'")
+    .replace(/&quot;/g, '"')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+}
+
 export default function ReportsPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
@@ -170,7 +188,7 @@ export default function ReportsPage() {
                 {reportData.topQuestions.length > 0 ? (
                   <ul className="space-y-2">
                     {reportData.topQuestions.map((question, index) => (
-                      <li key={index} className="text-sm text-foreground">• {question}</li>
+                      <li key={index} className="text-sm text-foreground">• {decodeHtmlEntities(question)}</li>
                     ))}
                   </ul>
                 ) : (
@@ -188,7 +206,7 @@ export default function ReportsPage() {
                 {reportData.topConcerns.length > 0 ? (
                   <ul className="space-y-2">
                     {reportData.topConcerns.map((concern, index) => (
-                      <li key={index} className="text-sm text-foreground">• {concern}</li>
+                      <li key={index} className="text-sm text-foreground">• {decodeHtmlEntities(concern)}</li>
                     ))}
                   </ul>
                 ) : (
