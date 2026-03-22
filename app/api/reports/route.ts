@@ -153,20 +153,23 @@ export async function GET(request: NextRequest) {
         sentimentBreakdown: { positive: 0, neutral: 0, negative: 0 },
         topQuestions: [],
         topConcerns: [],
-        platformStats: { youtube: 0, instagram: 0 },
+        platformStats: { youtube: 0, instagram: 0, facebook: 0 },
+        platformActivity: [],
         recentActivity: [],
       })
     }
 
     const sentimentCounts = { positive: 0, neutral: 0, negative: 0 }
-    const platformStats = { youtube: 0, instagram: 0 }
+    const platformStats = { youtube: 0, instagram: 0, facebook: 0 }
     const activityMap = new Map<string, { date: string; comments: number; replies: number }>()
+    const platformActivityMap = new Map<string, { date: string; youtube: number; instagram: number; facebook: number }>()
 
     for (let offset = 0; offset < days; offset += 1) {
       const day = new Date(reportStartDay)
       day.setUTCDate(reportStartDay.getUTCDate() + offset)
       const key = formatDayKey(day)
       activityMap.set(key, { date: key, comments: 0, replies: 0 })
+      platformActivityMap.set(key, { date: key, youtube: 0, instagram: 0, facebook: 0 })
     }
 
     for (const comment of filteredComments) {
@@ -178,6 +181,8 @@ export async function GET(request: NextRequest) {
         platformStats.youtube += 1
       } else if (comment.platform === 'instagram') {
         platformStats.instagram += 1
+      } else if (comment.platform === 'facebook') {
+        platformStats.facebook += 1
       }
 
       const dayKey = formatDayKey(startOfUtcDay(comment.publishedAt))
@@ -186,6 +191,17 @@ export async function GET(request: NextRequest) {
         bucket.comments += 1
         if (comment.status === 'replied' || comment.posted) {
           bucket.replies += 1
+        }
+      }
+
+      const platformBucket = platformActivityMap.get(dayKey)
+      if (platformBucket) {
+        if (comment.platform === 'youtube') {
+          platformBucket.youtube += 1
+        } else if (comment.platform === 'instagram') {
+          platformBucket.instagram += 1
+        } else if (comment.platform === 'facebook') {
+          platformBucket.facebook += 1
         }
       }
     }
@@ -223,6 +239,7 @@ export async function GET(request: NextRequest) {
     }
 
     const recentActivity = Array.from(activityMap.values()).sort((a, b) => b.date.localeCompare(a.date))
+    const platformActivity = Array.from(platformActivityMap.values()).sort((a, b) => a.date.localeCompare(b.date))
 
     return NextResponse.json({
       totalComments,
@@ -230,6 +247,7 @@ export async function GET(request: NextRequest) {
       topQuestions,
       topConcerns,
       platformStats,
+      platformActivity,
       recentActivity,
     })
   } catch (error) {

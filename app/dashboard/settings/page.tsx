@@ -111,6 +111,13 @@ export default function SettingsPage() {
     setSettings(prev => ({ ...prev, [field]: value }))
   }
 
+  const inputClassName =
+    'mt-1 block w-full rounded-md border border-border bg-muted/40 px-3 py-2 text-sm text-foreground shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500'
+  const selectClassName =
+    'mt-1 block w-full rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 [color-scheme:dark]'
+  const numberInputClassName = `${inputClassName} no-spinner [appearance:textfield]`
+  const sectionCardClass = 'bg-card shadow rounded-lg gradient-card overflow-hidden'
+
   if (status === 'loading') {
     return (
       <div className="flex items-center justify-center h-64">
@@ -121,7 +128,7 @@ export default function SettingsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
+      <div className="rounded-xl border border-border bg-card/70 p-5 gradient-card">
         <h1 className="text-2xl font-bold text-foreground">Settings</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Configure your AI reply preferences and automation settings.
@@ -129,34 +136,41 @@ export default function SettingsPage() {
       </div>
 
       {errorMessage && (
-        <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div className="rounded-md border border-red-500/30 bg-red-900/20 px-4 py-3 text-sm text-red-300">
           {errorMessage}
         </div>
       )}
 
       {saveMessage && (
-        <div className="rounded-md border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
+        <div className="rounded-md border border-green-500/30 bg-green-900/20 px-4 py-3 text-sm text-green-300">
           {saveMessage}
         </div>
       )}
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-        <div className="rounded-lg bg-card p-5 shadow gradient-card">
+        <div className="rounded-lg bg-card p-5 shadow gradient-card transition-transform duration-200 hover:-translate-y-0.5">
           <p className="text-sm text-muted-foreground">Connected Platforms</p>
           <p className="mt-2 text-2xl font-semibold text-foreground">{stats.connectedPlatforms}</p>
         </div>
-        <div className="rounded-lg bg-card p-5 shadow gradient-card">
+        <div className="rounded-lg bg-card p-5 shadow gradient-card transition-transform duration-200 hover:-translate-y-0.5">
           <p className="text-sm text-muted-foreground">Monitored Content</p>
           <p className="mt-2 text-2xl font-semibold text-foreground">{stats.monitoredContent}</p>
         </div>
-        <div className="rounded-lg bg-card p-5 shadow gradient-card">
+        <div className="rounded-lg bg-card p-5 shadow gradient-card transition-transform duration-200 hover:-translate-y-0.5">
           <p className="text-sm text-muted-foreground">Comments Awaiting Review</p>
           <p className="mt-2 text-2xl font-semibold text-foreground">{stats.commentsAwaitingReview}</p>
         </div>
       </div>
 
-      <div className="bg-card shadow rounded-lg gradient-card">
+      <div className={sectionCardClass}>
         <div className="px-4 py-5 sm:p-6">
+          <div className="mb-5">
+            <h3 className="text-lg leading-6 font-medium text-foreground">AI Preferences</h3>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Control how AI replies sound and how automation behaves.
+            </p>
+          </div>
+
           {loadingSettings ? (
             <div className="flex items-center justify-center py-10">
               <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
@@ -173,7 +187,7 @@ export default function SettingsPage() {
                   id="aiTone"
                   value={settings.aiTone}
                   onChange={(e) => handleInputChange('aiTone', e.target.value)}
-                  className="mt-1 block w-full rounded-md border border-border bg-card px-3 py-2 text-base text-foreground focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  className={selectClassName}
                 >
                   <option value="professional">Professional</option>
                   <option value="friendly">Friendly</option>
@@ -185,13 +199,13 @@ export default function SettingsPage() {
               </div>
 
               {/* Auto Reply */}
-              <div className="flex items-center">
+              <div className="rounded-md border border-border bg-muted/20 px-3 py-3 flex items-center">
                 <input
                   id="autoReplyEnabled"
                   type="checkbox"
                   checked={settings.autoReplyEnabled}
                   onChange={(e) => handleInputChange('autoReplyEnabled', e.target.checked)}
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-border rounded"
                 />
                 <label htmlFor="autoReplyEnabled" className="ml-2 block text-sm text-foreground">
                   Enable automatic replies (Phase 6 feature)
@@ -210,7 +224,7 @@ export default function SettingsPage() {
                   onChange={(e) => handleInputChange('replyDelay', parseInt(e.target.value))}
                   min="0"
                   max="1440"
-                  className="mt-1 block w-full rounded-md border border-border bg-card text-foreground shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  className={numberInputClassName}
                 />
                 <p className="mt-1 text-sm text-muted-foreground">
                   Delay before posting AI-generated replies.
@@ -229,7 +243,7 @@ export default function SettingsPage() {
                   onChange={(e) => handleInputChange('maxRepliesPerHour', parseInt(e.target.value))}
                   min="1"
                   max="100"
-                  className="mt-1 block w-full rounded-md border border-border bg-card text-foreground shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  className={numberInputClassName}
                 />
                 <p className="mt-1 text-sm text-muted-foreground">
                   Maximum number of automated replies per hour to avoid spam detection.
@@ -246,7 +260,7 @@ export default function SettingsPage() {
                   value={settings.businessContext}
                   onChange={(e) => handleInputChange('businessContext', e.target.value)}
                   rows={4}
-                  className="mt-1 block w-full rounded-md border border-border bg-card text-foreground shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  className={inputClassName}
                   placeholder="Describe your business, products, or services to help the AI generate more relevant replies..."
                 />
                 <p className="mt-1 text-sm text-muted-foreground">
@@ -264,7 +278,7 @@ export default function SettingsPage() {
                   id="notificationEmail"
                   value={settings.notificationEmail}
                   onChange={(e) => handleInputChange('notificationEmail', e.target.value)}
-                  className="mt-1 block w-full rounded-md border border-border bg-card text-foreground shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  className={inputClassName}
                   placeholder="your@email.com"
                 />
                 <p className="mt-1 text-sm text-muted-foreground">
@@ -276,7 +290,7 @@ export default function SettingsPage() {
                 <button
                   onClick={saveSettings}
                   disabled={saving}
-                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {saving ? 'Saving...' : 'Save Settings'}
                 </button>
@@ -287,7 +301,7 @@ export default function SettingsPage() {
       </div>
 
       {/* DAG Schedule Settings */}
-      <div className="bg-card shadow rounded-lg gradient-card">
+      <div className={sectionCardClass}>
         <div className="px-4 py-5 sm:p-6">
           <h3 className="text-lg leading-6 font-medium text-foreground mb-1">Automation Schedule</h3>
           <p className="text-sm text-muted-foreground mb-6">
@@ -311,7 +325,7 @@ export default function SettingsPage() {
                   onChange={(e) => handleInputChange('fetchIntervalMinutes', parseInt(e.target.value))}
                   min="5"
                   max="1440"
-                  className="mt-1 block w-full rounded-md border border-border bg-card text-foreground shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  className={numberInputClassName}
                 />
                 <p className="mt-1 text-sm text-muted-foreground">
                   How often to pull new comments from YouTube/Instagram. Default: 30 min.
@@ -329,7 +343,7 @@ export default function SettingsPage() {
                   onChange={(e) => handleInputChange('processIntervalMinutes', parseInt(e.target.value))}
                   min="5"
                   max="1440"
-                  className="mt-1 block w-full rounded-md border border-border bg-card text-foreground shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  className={numberInputClassName}
                 />
                 <p className="mt-1 text-sm text-muted-foreground">
                   How often Gemini AI classifies comments and generates replies. Default: 60 min.
@@ -347,7 +361,7 @@ export default function SettingsPage() {
                   onChange={(e) => handleInputChange('postIntervalMinutes', parseInt(e.target.value))}
                   min="5"
                   max="1440"
-                  className="mt-1 block w-full rounded-md border border-border bg-card text-foreground shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  className={numberInputClassName}
                 />
                 <p className="mt-1 text-sm text-muted-foreground">
                   How often approved replies are posted back to platforms. Default: 15 min.
@@ -358,7 +372,7 @@ export default function SettingsPage() {
                 <button
                   onClick={saveSettings}
                   disabled={saving}
-                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {saving ? 'Saving...' : 'Save Settings'}
                 </button>
@@ -369,7 +383,7 @@ export default function SettingsPage() {
       </div>
 
       {/* Account Settings */}
-      <div className="bg-card shadow rounded-lg gradient-card">
+      <div className={sectionCardClass}>
         <div className="px-4 py-5 sm:p-6">
           <h3 className="text-lg leading-6 font-medium text-foreground mb-4">Account Settings</h3>
 

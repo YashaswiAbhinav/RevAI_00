@@ -16,7 +16,14 @@ interface ReportData {
   platformStats: {
     youtube: number
     instagram: number
+    facebook: number
   }
+  platformActivity: Array<{
+    date: string
+    youtube: number
+    instagram: number
+    facebook: number
+  }>
   recentActivity: Array<{
     date: string
     comments: number
@@ -108,16 +115,47 @@ export default function ReportsPage() {
 
   const youtubeCount = reportData?.platformStats.youtube ?? 0
   const instagramCount = reportData?.platformStats.instagram ?? 0
-  const platformTotal = youtubeCount + instagramCount
+  const facebookCount = reportData?.platformStats.facebook ?? 0
+  const platformTotal = youtubeCount + instagramCount + facebookCount
   const youtubePercent = platformTotal > 0 ? (youtubeCount / platformTotal) * 100 : 0
-  const instagramPercent = Math.max(0, 100 - youtubePercent)
+  const instagramPercent = platformTotal > 0 ? (instagramCount / platformTotal) * 100 : 0
+  const facebookPercent = Math.max(0, 100 - youtubePercent - instagramPercent)
 
   const platformPieStyle = {
     background: `conic-gradient(
       rgb(248 113 113) 0% ${youtubePercent}%,
-      rgb(244 114 182) ${youtubePercent}% 100%
+      rgb(244 114 182) ${youtubePercent}% ${youtubePercent + instagramPercent}%,
+      rgb(96 165 250) ${youtubePercent + instagramPercent}% 100%
     )`,
   }
+
+  const platformTrend = [...(reportData?.platformActivity ?? [])].sort((a, b) => a.date.localeCompare(b.date))
+  const svgWidth = Math.max(760, platformTrend.length * 18)
+  const svgHeight = 260
+  const chartPadding = { top: 16, right: 16, bottom: 36, left: 40 }
+  const chartWidth = svgWidth - chartPadding.left - chartPadding.right
+  const chartHeight = svgHeight - chartPadding.top - chartPadding.bottom
+  const maxDailyValue = Math.max(
+    1,
+    ...platformTrend.map((day) => Math.max(day.youtube, day.instagram, day.facebook))
+  )
+
+  const getX = (index: number) => {
+    if (platformTrend.length <= 1) {
+      return chartPadding.left + chartWidth / 2
+    }
+    return chartPadding.left + (index / (platformTrend.length - 1)) * chartWidth
+  }
+
+  const getY = (value: number) =>
+    chartPadding.top + ((maxDailyValue - value) / maxDailyValue) * chartHeight
+
+  const linePoints = (platform: 'youtube' | 'instagram' | 'facebook') =>
+    platformTrend
+      .map((day, index) => `${getX(index)},${getY(day[platform])}`)
+      .join(' ')
+
+  const xTickStep = Math.max(1, Math.floor(platformTrend.length / 6))
 
   return (
     <div className="space-y-6">
@@ -217,6 +255,131 @@ export default function ReportsPage() {
                     <span className="text-sm text-pink-400">Instagram</span>
                     <span className="text-sm font-medium text-foreground">{instagramPercent.toFixed(1)}% ({instagramCount})</span>
                   </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-blue-400">Facebook</span>
+                    <span className="text-sm font-medium text-foreground">{facebookPercent.toFixed(1)}% ({facebookCount})</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Platform Trend */}
+          <div className="bg-card overflow-hidden shadow rounded-lg gradient-card md:col-span-3">
+            <div className="p-5">
+              <h3 className="text-sm font-medium text-muted-foreground">Platform Comments Trend</h3>
+              <p className="mt-1 text-xs text-muted-foreground">
+                X-axis: days in selected range • Y-axis: comments
+              </p>
+
+              <div className="mt-4 overflow-hidden">
+                <svg
+                  width="100%"
+                  height={svgHeight}
+                  viewBox={`0 0 ${svgWidth} ${svgHeight}`}
+                  className="w-full"
+                  role="img"
+                  aria-label="Daily comments trend by platform"
+                >
+                  <line
+                    x1={chartPadding.left}
+                    y1={chartPadding.top + chartHeight}
+                    x2={svgWidth - chartPadding.right}
+                    y2={chartPadding.top + chartHeight}
+                    stroke="hsl(var(--border))"
+                    strokeWidth="1"
+                  />
+                  <line
+                    x1={chartPadding.left}
+                    y1={chartPadding.top}
+                    x2={chartPadding.left}
+                    y2={chartPadding.top + chartHeight}
+                    stroke="hsl(var(--border))"
+                    strokeWidth="1"
+                  />
+
+                  {[0, 0.5, 1].map((tick, index) => {
+                    const y = chartPadding.top + chartHeight * tick
+                    const value = Math.round(maxDailyValue * (1 - tick))
+                    return (
+                      <g key={index}>
+                        <line
+                          x1={chartPadding.left}
+                          y1={y}
+                          x2={svgWidth - chartPadding.right}
+                          y2={y}
+                          stroke="hsl(var(--border))"
+                          strokeWidth="1"
+                          opacity="0.35"
+                        />
+                        <text
+                          x={chartPadding.left - 8}
+                          y={y + 4}
+                          textAnchor="end"
+                          fill="hsl(var(--muted-foreground))"
+                          fontSize="11"
+                        >
+                          {value}
+                        </text>
+                      </g>
+                    )
+                  })}
+
+                  <polyline
+                    points={linePoints('youtube')}
+                    fill="none"
+                    stroke="rgb(248 113 113)"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                  <polyline
+                    points={linePoints('instagram')}
+                    fill="none"
+                    stroke="rgb(244 114 182)"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                  <polyline
+                    points={linePoints('facebook')}
+                    fill="none"
+                    stroke="rgb(96 165 250)"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+
+                  {platformTrend
+                    .map((day, index) => ({ day, index }))
+                    .filter(({ index }) => index % xTickStep === 0 || index === platformTrend.length - 1)
+                    .map(({ day, index }) => (
+                      <text
+                        key={day.date}
+                        x={getX(index)}
+                        y={svgHeight - 10}
+                        textAnchor="middle"
+                        fill="hsl(var(--muted-foreground))"
+                        fontSize="11"
+                      >
+                        {new Date(`${day.date}T00:00:00`).toLocaleDateString(undefined, {
+                          month: 'short',
+                          day: 'numeric',
+                        })}
+                      </text>
+                    ))}
+                </svg>
+              </div>
+
+              <div className="mt-3 flex flex-wrap gap-4 text-xs">
+                <div className="inline-flex items-center gap-2 text-foreground">
+                  <span className="h-2.5 w-2.5 rounded-full bg-red-400" /> YouTube
+                </div>
+                <div className="inline-flex items-center gap-2 text-foreground">
+                  <span className="h-2.5 w-2.5 rounded-full bg-pink-400" /> Instagram
+                </div>
+                <div className="inline-flex items-center gap-2 text-foreground">
+                  <span className="h-2.5 w-2.5 rounded-full bg-blue-400" /> Facebook
                 </div>
               </div>
             </div>
