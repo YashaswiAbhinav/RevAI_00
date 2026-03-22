@@ -29,11 +29,14 @@ export default function CommentsPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
   const [comments, setComments] = useState<Comment[]>([])
+  const [autoReplyEnabled, setAutoReplyEnabled] = useState(false)
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
+  const [autoProcessing, setAutoProcessing] = useState(false)
   const [generating, setGenerating] = useState<string | null>(null)
   const [approving, setApproving] = useState<string | null>(null)
   const hasLoadedRef = useRef(false)
+  const hasAutoProcessedRef = useRef(false)
   const [filters, setFilters] = useState<FilterOptions>({
     platform: '',
     sentiment: '',
@@ -50,10 +53,44 @@ export default function CommentsPage() {
   useEffect(() => {
     if (session?.user) {
       const controller = new AbortController()
-      fetchComments(controller.signal)
+      loadCommentsPageData(controller.signal)
       return () => controller.abort()
     }
   }, [session, filters])
+
+  const loadCommentsPageData = async (signal?: AbortSignal) => {
+    await Promise.all([
+      fetchComments(signal),
+      loadAutomationSettings(signal),
+    ])
+  }
+
+  const loadAutomationSettings = async (signal?: AbortSignal) => {
+    try {
+      const response = await fetch('/api/settings', {
+        cache: 'no-store',
+        signal,
+      })
+
+      if (!response.ok) {
+        return
+      }
+
+      const data = await response.json()
+      const enabled = Boolean(data.settings?.autoReplyEnabled)
+      setAutoReplyEnabled(enabled)
+
+      if (enabled && !hasAutoProcessedRef.current) {
+        hasAutoProcessedRef.current = true
+        await autoProcessComments(signal)
+      }
+    } catch (error) {
+      if ((error as Error).name === 'AbortError') {
+        return
+      }
+      console.error('Failed to load automation settings:', error)
+    }
+  }
 
   const fetchComments = async (signal?: AbortSignal) => {
     if (hasLoadedRef.current) {
@@ -86,6 +123,28 @@ export default function CommentsPage() {
     } finally {
       setLoading(false)
       setRefreshing(false)
+    }
+  }
+
+  const autoProcessComments = async (signal?: AbortSignal) => {
+    setAutoProcessing(true)
+    try {
+      const response = await fetch('/api/comments/auto-process', {
+        method: 'POST',
+        cache: 'no-store',
+        signal,
+      })
+
+      if (response.ok) {
+        await fetchComments(signal)
+      }
+    } catch (error) {
+      if ((error as Error).name === 'AbortError') {
+        return
+      }
+      console.error('Failed to auto-process comments:', error)
+    } finally {
+      setAutoProcessing(false)
     }
   }
 
@@ -211,10 +270,18 @@ export default function CommentsPage() {
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Comments Management</h1>
         <p className="mt-1 text-sm text-gray-600">
-          Review comments from your monitored content and manage AI-generated replies.
+          Review comments from your monitored content and track AI-generated replies.
         </p>
+        {autoReplyEnabled && (
+          <p className="mt-2 text-sm text-green-700">
+            Automatic replies are enabled. Eligible comments are generated and queued for posting automatically.
+          </p>
+        )}
         {refreshing && (
           <p className="mt-2 text-sm text-blue-600">Refreshing comments...</p>
+        )}
+        {autoProcessing && (
+          <p className="mt-2 text-sm text-blue-600">Auto-processing new comments...</p>
         )}
       </div>
 
@@ -356,8 +423,8 @@ export default function CommentsPage() {
                     )}
 
                     <div className="flex space-x-3">
-                      {/* Generate button: only for pending/classified with no reply yet */}
-                      {!comment.aiReply && (comment.status === 'pending' || comment.status === 'classified') && (
+                      {/* Manual generation remains available only when automation is disabled */}
+                      {!autoReplyEnabled && !comment.aiReply && (comment.status === 'pending' || comment.status === 'classified') && (
                         <button
                           onClick={() => generateAIReply(comment.id)}
                           disabled={generating === comment.id}
@@ -379,8 +446,8 @@ export default function CommentsPage() {
                         </button>
                       )}
 
-                      {/* Approve/Reject: only when a reply exists AND status is pending or classified */}
-                      {comment.aiReply && (comment.status === 'pending' || comment.status === 'classified') && (
+                      {/* Manual approval remains available only when automation is disabled */}
+                      {!autoReplyEnabled && comment.aiReply && (comment.status === 'pending' || comment.status === 'classified') && (
                         <>
                           <button
                             onClick={() => approveReply(comment.id)}

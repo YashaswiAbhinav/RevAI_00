@@ -1,13 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
-import { prisma } from '@/lib/db/postgres'
 import { firestore } from '@/lib/db/firestore'
-import { classifyComment } from '@/lib/integrations/gemini'
-import { generateReply } from '@/lib/integrations/gemini'
-
-const ACTIVE_GEMINI_MODEL =
-  process.env.GEMINI_MODEL || 'gemini-2.5-flash'
+import { processCommentForAutomation } from '@/lib/comments/automation'
 
 export async function POST(request: NextRequest) {
   try {
@@ -33,37 +28,29 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
-      select: {
-        businessContext: true,
-      },
-    })
-
-    const classification = await classifyComment(comment.text || '')
-    const reply = await generateReply(
-      comment.text || '',
-      comment.author?.name || 'Customer',
-      comment.platform || 'youtube',
-      user?.businessContext || undefined
-    )
+    const result = await processCommentForAutomation(comment, session.user.id)
 
     await commentRef.update({
-      classification,
-      generatedReply: {
-        text: reply,
+      classification: result.classification,
+      generatedReply: result.reply ? {
+        text: result.reply,
         generatedAt: new Date(),
-        model: ACTIVE_GEMINI_MODEL,
+        model: result.model,
+      } : null,
+      automation: {
+        processedAt: new Date(),
+        decision: result.reason || null,
       },
-      status: 'classified',
+      status: result.status,
       updatedAt: new Date(),
     })
 
     return NextResponse.json({
-      reply,
-      classification,
-      status: 'classified',
-      model: ACTIVE_GEMINI_MODEL,
+      reply: result.reply || null,
+      classification: result.classification,
+      status: result.status,
+      model: result.model || null,
+      reason: result.reason || null,
     })
 
   } catch (error) {
