@@ -68,6 +68,9 @@ export default function ReportsPage() {
     )
   }
 
+  const visibleRecentActivity =
+    reportData?.recentActivity.filter((activity) => activity.comments > 0 || activity.replies > 0) ?? []
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -200,9 +203,9 @@ export default function ReportsPage() {
             <div className="p-5">
               <h3 className="text-sm font-medium text-muted-foreground">Recent Activity</h3>
               <div className="mt-3">
-                {reportData.recentActivity.length > 0 ? (
+                {visibleRecentActivity.length > 0 ? (
                   <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
-                    {reportData.recentActivity.map((activity) => (
+                    {visibleRecentActivity.map((activity) => (
                         <div key={activity.date} className="rounded-lg border border-border bg-muted p-4">
                           <p className="text-sm font-medium text-foreground">
                           {new Date(`${activity.date}T00:00:00`).toLocaleDateString()}
