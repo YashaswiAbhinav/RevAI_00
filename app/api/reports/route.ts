@@ -155,14 +155,34 @@ export async function GET(request: NextRequest) {
         topConcerns: [],
         platformStats: { youtube: 0, instagram: 0, facebook: 0 },
         platformActivity: [],
+        sentimentPlatformStats: {
+          positive: { youtube: 0, instagram: 0, facebook: 0 },
+          neutral: { youtube: 0, instagram: 0, facebook: 0 },
+          negative: { youtube: 0, instagram: 0, facebook: 0 },
+        },
+        sentimentPlatformActivity: {
+          positive: [],
+          neutral: [],
+          negative: [],
+        },
         recentActivity: [],
       })
     }
 
     const sentimentCounts = { positive: 0, neutral: 0, negative: 0 }
     const platformStats = { youtube: 0, instagram: 0, facebook: 0 }
+    const sentimentPlatformStats = {
+      positive: { youtube: 0, instagram: 0, facebook: 0 },
+      neutral: { youtube: 0, instagram: 0, facebook: 0 },
+      negative: { youtube: 0, instagram: 0, facebook: 0 },
+    }
     const activityMap = new Map<string, { date: string; comments: number; replies: number }>()
     const platformActivityMap = new Map<string, { date: string; youtube: number; instagram: number; facebook: number }>()
+    const sentimentPlatformActivityMap = {
+      positive: new Map<string, { date: string; youtube: number; instagram: number; facebook: number }>(),
+      neutral: new Map<string, { date: string; youtube: number; instagram: number; facebook: number }>(),
+      negative: new Map<string, { date: string; youtube: number; instagram: number; facebook: number }>(),
+    }
 
     for (let offset = 0; offset < days; offset += 1) {
       const day = new Date(reportStartDay)
@@ -170,6 +190,9 @@ export async function GET(request: NextRequest) {
       const key = formatDayKey(day)
       activityMap.set(key, { date: key, comments: 0, replies: 0 })
       platformActivityMap.set(key, { date: key, youtube: 0, instagram: 0, facebook: 0 })
+      sentimentPlatformActivityMap.positive.set(key, { date: key, youtube: 0, instagram: 0, facebook: 0 })
+      sentimentPlatformActivityMap.neutral.set(key, { date: key, youtube: 0, instagram: 0, facebook: 0 })
+      sentimentPlatformActivityMap.negative.set(key, { date: key, youtube: 0, instagram: 0, facebook: 0 })
     }
 
     for (const comment of filteredComments) {
@@ -202,6 +225,28 @@ export async function GET(request: NextRequest) {
           platformBucket.instagram += 1
         } else if (comment.platform === 'facebook') {
           platformBucket.facebook += 1
+        }
+      }
+
+      if (comment.sentiment) {
+        const sentimentStats = sentimentPlatformStats[comment.sentiment]
+        if (comment.platform === 'youtube') {
+          sentimentStats.youtube += 1
+        } else if (comment.platform === 'instagram') {
+          sentimentStats.instagram += 1
+        } else if (comment.platform === 'facebook') {
+          sentimentStats.facebook += 1
+        }
+
+        const sentimentBucket = sentimentPlatformActivityMap[comment.sentiment].get(dayKey)
+        if (sentimentBucket) {
+          if (comment.platform === 'youtube') {
+            sentimentBucket.youtube += 1
+          } else if (comment.platform === 'instagram') {
+            sentimentBucket.instagram += 1
+          } else if (comment.platform === 'facebook') {
+            sentimentBucket.facebook += 1
+          }
         }
       }
     }
@@ -240,6 +285,11 @@ export async function GET(request: NextRequest) {
 
     const recentActivity = Array.from(activityMap.values()).sort((a, b) => b.date.localeCompare(a.date))
     const platformActivity = Array.from(platformActivityMap.values()).sort((a, b) => a.date.localeCompare(b.date))
+    const sentimentPlatformActivity = {
+      positive: Array.from(sentimentPlatformActivityMap.positive.values()).sort((a, b) => a.date.localeCompare(b.date)),
+      neutral: Array.from(sentimentPlatformActivityMap.neutral.values()).sort((a, b) => a.date.localeCompare(b.date)),
+      negative: Array.from(sentimentPlatformActivityMap.negative.values()).sort((a, b) => a.date.localeCompare(b.date)),
+    }
 
     return NextResponse.json({
       totalComments,
@@ -248,6 +298,8 @@ export async function GET(request: NextRequest) {
       topConcerns,
       platformStats,
       platformActivity,
+      sentimentPlatformStats,
+      sentimentPlatformActivity,
       recentActivity,
     })
   } catch (error) {

@@ -24,6 +24,16 @@ interface ReportData {
     instagram: number
     facebook: number
   }>
+  sentimentPlatformStats: {
+    positive: { youtube: number; instagram: number; facebook: number }
+    neutral: { youtube: number; instagram: number; facebook: number }
+    negative: { youtube: number; instagram: number; facebook: number }
+  }
+  sentimentPlatformActivity: {
+    positive: Array<{ date: string; youtube: number; instagram: number; facebook: number }>
+    neutral: Array<{ date: string; youtube: number; instagram: number; facebook: number }>
+    negative: Array<{ date: string; youtube: number; instagram: number; facebook: number }>
+  }
   recentActivity: Array<{
     date: string
     comments: number
@@ -55,6 +65,7 @@ export default function ReportsPage() {
   const [reportData, setReportData] = useState<ReportData | null>(null)
   const [loading, setLoading] = useState(true)
   const [timeRange, setTimeRange] = useState('7d') // 7d, 30d, 90d
+  const [hoveredSentiment, setHoveredSentiment] = useState<'positive' | 'neutral' | 'negative' | null>(null)
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -113,9 +124,13 @@ export default function ReportsPage() {
     )`,
   }
 
-  const youtubeCount = reportData?.platformStats.youtube ?? 0
-  const instagramCount = reportData?.platformStats.instagram ?? 0
-  const facebookCount = reportData?.platformStats.facebook ?? 0
+  const activePlatformStats = hoveredSentiment
+    ? reportData?.sentimentPlatformStats?.[hoveredSentiment]
+    : reportData?.platformStats
+
+  const youtubeCount = activePlatformStats?.youtube ?? 0
+  const instagramCount = activePlatformStats?.instagram ?? 0
+  const facebookCount = activePlatformStats?.facebook ?? 0
   const platformTotal = youtubeCount + instagramCount + facebookCount
   const youtubePercent = platformTotal > 0 ? (youtubeCount / platformTotal) * 100 : 0
   const instagramPercent = platformTotal > 0 ? (instagramCount / platformTotal) * 100 : 0
@@ -129,7 +144,11 @@ export default function ReportsPage() {
     )`,
   }
 
-  const platformTrend = [...(reportData?.platformActivity ?? [])].sort((a, b) => a.date.localeCompare(b.date))
+  const activePlatformTrend = hoveredSentiment
+    ? reportData?.sentimentPlatformActivity?.[hoveredSentiment] ?? []
+    : reportData?.platformActivity ?? []
+
+  const platformTrend = [...activePlatformTrend].sort((a, b) => a.date.localeCompare(b.date))
   const svgWidth = Math.max(760, platformTrend.length * 18)
   const svgHeight = 260
   const chartPadding = { top: 16, right: 16, bottom: 36, left: 40 }
@@ -220,15 +239,27 @@ export default function ReportsPage() {
                 </div>
 
                 <div className="flex-1 space-y-2">
-                  <div className="flex items-center justify-between">
+                  <div
+                    className="flex items-center justify-between rounded px-2 py-1 cursor-pointer hover:bg-muted/40"
+                    onMouseEnter={() => setHoveredSentiment('positive')}
+                    onMouseLeave={() => setHoveredSentiment(null)}
+                  >
                     <span className="text-sm text-green-400">Positive</span>
                     <span className="text-sm font-medium text-foreground">{sentimentPositive}%</span>
                   </div>
-                  <div className="flex items-center justify-between">
+                  <div
+                    className="flex items-center justify-between rounded px-2 py-1 cursor-pointer hover:bg-muted/40"
+                    onMouseEnter={() => setHoveredSentiment('neutral')}
+                    onMouseLeave={() => setHoveredSentiment(null)}
+                  >
                     <span className="text-sm text-muted-foreground">Neutral</span>
                     <span className="text-sm font-medium text-foreground">{sentimentNeutral}%</span>
                   </div>
-                  <div className="flex items-center justify-between">
+                  <div
+                    className="flex items-center justify-between rounded px-2 py-1 cursor-pointer hover:bg-muted/40"
+                    onMouseEnter={() => setHoveredSentiment('negative')}
+                    onMouseLeave={() => setHoveredSentiment(null)}
+                  >
                     <span className="text-sm text-red-400">Negative</span>
                     <span className="text-sm font-medium text-foreground">{sentimentNegative}%</span>
                   </div>
@@ -240,7 +271,12 @@ export default function ReportsPage() {
           {/* Platform Stats */}
           <div className="bg-card overflow-hidden shadow rounded-lg gradient-card">
             <div className="p-5">
-              <h3 className="text-sm font-medium text-muted-foreground">Platform Distribution</h3>
+              <h3 className="text-sm font-medium text-muted-foreground">
+                Platform Distribution
+                {hoveredSentiment
+                  ? ` (${hoveredSentiment.charAt(0).toUpperCase() + hoveredSentiment.slice(1)} Sentiment)`
+                  : ''}
+              </h3>
               <div className="mt-4 flex items-center gap-4">
                 <div className="relative h-24 w-24 shrink-0 rounded-full" style={platformPieStyle}>
                   <div className="absolute inset-4 rounded-full bg-card" />
@@ -267,7 +303,12 @@ export default function ReportsPage() {
           {/* Platform Trend */}
           <div className="bg-card overflow-hidden shadow rounded-lg gradient-card md:col-span-3">
             <div className="p-5">
-              <h3 className="text-sm font-medium text-muted-foreground">Platform Comments Trend</h3>
+              <h3 className="text-sm font-medium text-muted-foreground">
+                Platform Comments Trend
+                {hoveredSentiment
+                  ? ` (${hoveredSentiment.charAt(0).toUpperCase() + hoveredSentiment.slice(1)} Sentiment)`
+                  : ''}
+              </h3>
               <p className="mt-1 text-xs text-muted-foreground">
                 X-axis: days in selected range • Y-axis: comments
               </p>
