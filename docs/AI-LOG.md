@@ -46,3 +46,34 @@
   - `app/api/reports/route.ts`
   - `app/dashboard/settings/page.tsx`
   - `app/globals.css`
+
+## 2026-03-22 (Demo dataset integration for Facebook/Instagram)
+
+- Added a fake comments fixture for demo/testing:
+  - `data/fixtures/facebook-instagram-comments.json`
+  - Includes Instagram + Facebook comments with fields: `id`, `platform`, `contentId`, `contentTitle`, `author`, `text`, `publishedAt`, `sentiment`, `status`.
+
+- Added demo fixture loader utility:
+  - `lib/demo/fixture-comments.ts`
+  - Responsibilities:
+    - load JSON fixture from disk,
+    - validate basic shape,
+    - cache loaded records in memory,
+    - expose `isDemoFixtureEnabled()` flag check.
+
+- Integrated fixture data into APIs (merge mode):
+  - `app/api/comments/route.ts`
+    - When demo flag is enabled, fixture comments are appended to normal API response.
+  - `app/api/reports/route.ts`
+    - When demo flag is enabled, fixture comments are included in reports aggregates
+      (sentiment breakdown, platform distribution, platform trends, sentiment-filtered platform aggregates).
+
+- Feature toggle:
+  - Enabled by either env var:
+    - `ENABLE_DEMO_FIXTURES=true`
+    - `NEXT_PUBLIC_ENABLE_DEMO_FIXTURES=true`
+  - Default behavior remains unchanged when flags are not set.
+
+- Demo impact:
+  - Faster presentation setup without requiring live Facebook/Instagram traffic.
+  - Deterministic sample data for chart demos and filters.

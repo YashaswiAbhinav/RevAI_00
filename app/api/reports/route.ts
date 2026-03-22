@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth'
 import { firestore } from '@/lib/db/firestore'
 import { prisma } from '@/lib/db/postgres'
 import { geminiAPI } from '@/lib/integrations/gemini'
+import { isDemoFixtureEnabled, loadDemoFixtureComments } from '@/lib/demo/fixture-comments'
 
 type NormalizedSentiment = 'positive' | 'neutral' | 'negative'
 type NormalizedCommentType = 'question' | 'complaint' | 'praise' | 'spam' | 'general'
@@ -123,7 +124,7 @@ export async function GET(request: NextRequest) {
       }),
     ])
 
-    const filteredComments = commentSnapshot.docs
+    let filteredComments = commentSnapshot.docs
       .map((doc) => {
         const data = doc.data()
         const classification = typeof data.classification === 'object' && data.classification
@@ -145,6 +146,30 @@ export async function GET(request: NextRequest) {
         }
       })
       .filter((comment): comment is NonNullable<typeof comment> => Boolean(comment))
+
+    if (isDemoFixtureEnabled()) {
+      const fixtureComments = await loadDemoFixtureComments()
+      const normalizedFixtureComments = fixtureComments
+        .map((comment) => {
+          const publishedAt = toDate(comment.publishedAt)
+          if (!publishedAt || publishedAt < reportStartDay || publishedAt > endDate) {
+            return null
+          }
+
+          return {
+            text: String(comment.text || ''),
+            platform: String(comment.platform || '').toLowerCase(),
+            status: String(comment.status || 'pending'),
+            publishedAt,
+            type: normalizeCommentType(comment.text?.includes('?') ? 'question' : 'general'),
+            sentiment: normalizeSentiment(comment.sentiment),
+            posted: comment.status === 'replied',
+          }
+        })
+        .filter((comment): comment is NonNullable<typeof comment> => Boolean(comment))
+
+      filteredComments = [...filteredComments, ...normalizedFixtureComments]
+    }
 
     const totalComments = filteredComments.length
     if (totalComments === 0) {

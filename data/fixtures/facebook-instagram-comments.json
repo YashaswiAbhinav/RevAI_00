@@ -1,0 +1,182 @@
+{
+  "generatedAt": "2026-03-22T00:00:00.000Z",
+  "description": "Fake dataset for Facebook and Instagram comments for UI/testing.",
+  "comments": [
+    {
+      "id": "ig_001",
+      "platform": "instagram",
+      "contentId": "ig_post_1001",
+      "contentTitle": "Spring Product Launch Reel",
+      "author": "maya.designs",
+      "text": "Love this launch! The colors look amazing.",
+      "publishedAt": "2026-03-20T10:14:00.000Z",
+      "sentiment": "positive",
+      "status": "replied"
+    },
+    {
+      "id": "ig_002",
+      "platform": "instagram",
+      "contentId": "ig_post_1001",
+      "contentTitle": "Spring Product Launch Reel",
+      "author": "rahul.fit",
+      "text": "Does this come in matte black?",
+      "publishedAt": "2026-03-20T10:28:00.000Z",
+      "sentiment": "neutral",
+      "status": "classified"
+    },
+    {
+      "id": "ig_003",
+      "platform": "instagram",
+      "contentId": "ig_post_1002",
+      "contentTitle": "Behind The Scenes Story",
+      "author": "zoe_photo",
+      "text": "Shipping took too long for my order 😕",
+      "publishedAt": "2026-03-20T11:09:00.000Z",
+      "sentiment": "negative",
+      "status": "pending"
+    },
+    {
+      "id": "ig_004",
+      "platform": "instagram",
+      "contentId": "ig_post_1003",
+      "contentTitle": "Customer Testimonial Carousel",
+      "author": "amir_tech",
+      "text": "Can you share the exact specs listed in slide 3?",
+      "publishedAt": "2026-03-20T12:44:00.000Z",
+      "sentiment": "neutral",
+      "status": "ready_to_post"
+    },
+    {
+      "id": "ig_005",
+      "platform": "instagram",
+      "contentId": "ig_post_1004",
+      "contentTitle": "Weekend Offer Post",
+      "author": "nina.home",
+      "text": "Got mine today and it works perfectly. Thank you!",
+      "publishedAt": "2026-03-21T08:16:00.000Z",
+      "sentiment": "positive",
+      "status": "replied"
+    },
+    {
+      "id": "ig_006",
+      "platform": "instagram",
+      "contentId": "ig_post_1004",
+      "contentTitle": "Weekend Offer Post",
+      "author": "its_karim",
+      "text": "Why is the discount not applying at checkout?",
+      "publishedAt": "2026-03-21T08:35:00.000Z",
+      "sentiment": "negative",
+      "status": "classified"
+    },
+    {
+      "id": "ig_007",
+      "platform": "instagram",
+      "contentId": "ig_post_1005",
+      "contentTitle": "FAQ Reel",
+      "author": "hana_reads",
+      "text": "Can this be used internationally?",
+      "publishedAt": "2026-03-21T09:10:00.000Z",
+      "sentiment": "neutral",
+      "status": "pending"
+    },
+    {
+      "id": "ig_008",
+      "platform": "instagram",
+      "contentId": "ig_post_1006",
+      "contentTitle": "Feature Highlight",
+      "author": "josh.motion",
+      "text": "This update is super helpful 🔥",
+      "publishedAt": "2026-03-21T09:42:00.000Z",
+      "sentiment": "positive",
+      "status": "replied"
+    },
+    {
+      "id": "fb_001",
+      "platform": "facebook",
+      "contentId": "fb_post_2001",
+      "contentTitle": "March Promo Announcement",
+      "author": "Clara Benson",
+      "text": "Great promo! Just placed my second order.",
+      "publishedAt": "2026-03-20T07:22:00.000Z",
+      "sentiment": "positive",
+      "status": "replied"
+    },
+    {
+      "id": "fb_002",
+      "platform": "facebook",
+      "contentId": "fb_post_2001",
+      "contentTitle": "March Promo Announcement",
+      "author": "David Rocha",
+      "text": "Is this offer valid in Canada too?",
+      "publishedAt": "2026-03-20T07:41:00.000Z",
+      "sentiment": "neutral",
+      "status": "classified"
+    },
+    {
+      "id": "fb_003",
+      "platform": "facebook",
+      "contentId": "fb_post_2002",
+      "contentTitle": "Customer Support Update",
+      "author": "Elena M.",
+      "text": "Support replied after 3 days, very disappointing.",
+      "publishedAt": "2026-03-20T09:05:00.000Z",
+      "sentiment": "negative",
+      "status": "pending"
+    },
+    {
+      "id": "fb_004",
+      "platform": "facebook",
+      "contentId": "fb_post_2003",
+      "contentTitle": "How-To Video",
+      "author": "Garry Lee",
+      "text": "Can you post a step-by-step written guide as well?",
+      "publishedAt": "2026-03-20T13:27:00.000Z",
+      "sentiment": "neutral",
+      "status": "ready_to_post"
+    },
+    {
+      "id": "fb_005",
+      "platform": "facebook",
+      "contentId": "fb_post_2004",
+      "contentTitle": "Community Spotlight",
+      "author": "Hana Ortiz",
+      "text": "So proud to be featured by your team 💙",
+      "publishedAt": "2026-03-21T06:11:00.000Z",
+      "sentiment": "positive",
+      "status": "replied"
+    },
+    {
+      "id": "fb_006",
+      "platform": "facebook",
+      "contentId": "fb_post_2004",
+      "contentTitle": "Community Spotlight",
+      "author": "Irfan Q",
+      "text": "My package arrived damaged. How do I replace it?",
+      "publishedAt": "2026-03-21T06:39:00.000Z",
+      "sentiment": "negative",
+      "status": "classified"
+    },
+    {
+      "id": "fb_007",
+      "platform": "facebook",
+      "contentId": "fb_post_2005",
+      "contentTitle": "Weekly Feature Poll",
+      "author": "Jules Park",
+      "text": "Please add dark mode to the mobile app too.",
+      "publishedAt": "2026-03-21T10:02:00.000Z",
+      "sentiment": "neutral",
+      "status": "pending"
+    },
+    {
+      "id": "fb_008",
+      "platform": "facebook",
+      "contentId": "fb_post_2006",
+      "contentTitle": "New Version Release",
+      "author": "Kaitlyn Snow",
+      "text": "Update fixed all my issues. Awesome work team!",
+      "publishedAt": "2026-03-21T10:47:00.000Z",
+      "sentiment": "positive",
+      "status": "replied"
+    }
+  ]
+}

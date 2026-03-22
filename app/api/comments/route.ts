@@ -3,6 +3,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/db/postgres'
 import { firestore } from '@/lib/db/firestore'
+import { isDemoFixtureEnabled, loadDemoFixtureComments } from '@/lib/demo/fixture-comments'
 
 function normalizeSentiment(value: unknown): 'positive' | 'neutral' | 'negative' | undefined {
   if (typeof value !== 'string') {
@@ -80,6 +81,25 @@ export async function GET(request: NextRequest) {
         status: (['pending','classified','ready_to_post','replied','failed','rejected'].includes(data.status) ? data.status : 'pending'),
       }
     })
+
+    if (isDemoFixtureEnabled()) {
+      const fixtureComments = await loadDemoFixtureComments()
+      comments.push(
+        ...fixtureComments.map((item) => ({
+          id: item.id,
+          text: item.text,
+          author: item.author,
+          authorAvatar: '',
+          publishedAt: item.publishedAt,
+          platform: item.platform,
+          contentId: item.contentId,
+          contentTitle: item.contentTitle,
+          sentiment: normalizeSentiment(item.sentiment),
+          aiReply: '',
+          status: item.status,
+        }))
+      )
+    }
 
     // Apply filters
     let filteredComments = comments
