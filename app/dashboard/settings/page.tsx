@@ -117,6 +117,9 @@ export default function SettingsPage() {
     'mt-1 block w-full rounded-md border border-border bg-card px-3 py-2 text-sm text-foreground shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 [color-scheme:dark]'
   const numberInputClassName = `${inputClassName} no-spinner [appearance:textfield]`
   const sectionCardClass = 'bg-card shadow rounded-lg gradient-card overflow-hidden'
+  const rowClassName = 'grid grid-cols-1 gap-2 md:grid-cols-12 md:items-start md:gap-4'
+  const labelClassName = 'block text-sm font-medium text-foreground md:col-span-4 md:pt-2'
+  const fieldWrapClassName = 'md:col-span-8'
 
   if (status === 'loading') {
     return (
@@ -179,111 +182,126 @@ export default function SettingsPage() {
           ) : (
             <div className="space-y-6">
               {/* AI Tone */}
-              <div>
-                <label htmlFor="aiTone" className="block text-sm font-medium text-foreground">
+              <div className={rowClassName}>
+                <label htmlFor="aiTone" className={labelClassName}>
                   AI Reply Tone
                 </label>
-                <select
-                  id="aiTone"
-                  value={settings.aiTone}
-                  onChange={(e) => handleInputChange('aiTone', e.target.value)}
-                  className={selectClassName}
-                >
-                  <option value="professional">Professional</option>
-                  <option value="friendly">Friendly</option>
-                  <option value="casual">Casual</option>
-                </select>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  Choose the tone for AI-generated replies.
-                </p>
+                <div className={fieldWrapClassName}>
+                  <select
+                    id="aiTone"
+                    value={settings.aiTone}
+                    onChange={(e) => handleInputChange('aiTone', e.target.value)}
+                    className={selectClassName}
+                  >
+                    <option value="professional">Professional</option>
+                    <option value="friendly">Friendly</option>
+                    <option value="casual">Casual</option>
+                  </select>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Choose the tone for AI-generated replies.
+                  </p>
+                </div>
               </div>
 
               {/* Auto Reply */}
-              <div className="rounded-md border border-border bg-muted/20 px-3 py-3 flex items-center">
-                <input
-                  id="autoReplyEnabled"
-                  type="checkbox"
-                  checked={settings.autoReplyEnabled}
-                  onChange={(e) => handleInputChange('autoReplyEnabled', e.target.checked)}
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-border rounded"
-                />
-                <label htmlFor="autoReplyEnabled" className="ml-2 block text-sm text-foreground">
-                  Enable automatic replies (Phase 6 feature)
+              <div className={rowClassName}>
+                <label htmlFor="autoReplyEnabled" className={labelClassName}>
+                  Automatic Replies
                 </label>
+                <div className={`${fieldWrapClassName} rounded-md border border-border bg-muted/20 px-3 py-3 flex items-center`}>
+                  <input
+                    id="autoReplyEnabled"
+                    type="checkbox"
+                    checked={settings.autoReplyEnabled}
+                    onChange={(e) => handleInputChange('autoReplyEnabled', e.target.checked)}
+                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-border rounded"
+                  />
+                  <label htmlFor="autoReplyEnabled" className="ml-2 block text-sm text-foreground">
+                    Enable automatic replies (Phase 6 feature)
+                  </label>
+                </div>
               </div>
 
               {/* Reply Delay */}
-              <div>
-                <label htmlFor="replyDelay" className="block text-sm font-medium text-foreground">
+              <div className={rowClassName}>
+                <label htmlFor="replyDelay" className={labelClassName}>
                   Reply Delay (minutes)
                 </label>
-                <input
-                  type="number"
-                  id="replyDelay"
-                  value={settings.replyDelay}
-                  onChange={(e) => handleInputChange('replyDelay', parseInt(e.target.value))}
-                  min="0"
-                  max="1440"
-                  className={numberInputClassName}
-                />
-                <p className="mt-1 text-sm text-muted-foreground">
-                  Delay before posting AI-generated replies.
-                </p>
+                <div className={fieldWrapClassName}>
+                  <input
+                    type="number"
+                    id="replyDelay"
+                    value={settings.replyDelay}
+                    onChange={(e) => handleInputChange('replyDelay', parseInt(e.target.value))}
+                    min="0"
+                    max="1440"
+                    className={numberInputClassName}
+                  />
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Delay before posting AI-generated replies.
+                  </p>
+                </div>
               </div>
 
               {/* Max Replies Per Hour */}
-              <div>
-                <label htmlFor="maxRepliesPerHour" className="block text-sm font-medium text-foreground">
+              <div className={rowClassName}>
+                <label htmlFor="maxRepliesPerHour" className={labelClassName}>
                   Max Replies Per Hour
                 </label>
-                <input
-                  type="number"
-                  id="maxRepliesPerHour"
-                  value={settings.maxRepliesPerHour}
-                  onChange={(e) => handleInputChange('maxRepliesPerHour', parseInt(e.target.value))}
-                  min="1"
-                  max="100"
-                  className={numberInputClassName}
-                />
-                <p className="mt-1 text-sm text-muted-foreground">
-                  Maximum number of automated replies per hour to avoid spam detection.
-                </p>
+                <div className={fieldWrapClassName}>
+                  <input
+                    type="number"
+                    id="maxRepliesPerHour"
+                    value={settings.maxRepliesPerHour}
+                    onChange={(e) => handleInputChange('maxRepliesPerHour', parseInt(e.target.value))}
+                    min="1"
+                    max="100"
+                    className={numberInputClassName}
+                  />
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Maximum number of automated replies per hour to avoid spam detection.
+                  </p>
+                </div>
               </div>
 
               {/* Business Context */}
-              <div>
-                <label htmlFor="businessContext" className="block text-sm font-medium text-foreground">
+              <div className={rowClassName}>
+                <label htmlFor="businessContext" className={labelClassName}>
                   Business Context
                 </label>
-                <textarea
-                  id="businessContext"
-                  value={settings.businessContext}
-                  onChange={(e) => handleInputChange('businessContext', e.target.value)}
-                  rows={4}
-                  className={inputClassName}
-                  placeholder="Describe your business, products, or services to help the AI generate more relevant replies..."
-                />
-                <p className="mt-1 text-sm text-muted-foreground">
-                  This context helps the AI understand your business for better replies.
-                </p>
+                <div className={fieldWrapClassName}>
+                  <textarea
+                    id="businessContext"
+                    value={settings.businessContext}
+                    onChange={(e) => handleInputChange('businessContext', e.target.value)}
+                    rows={4}
+                    className={inputClassName}
+                    placeholder="Describe your business, products, or services to help the AI generate more relevant replies..."
+                  />
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    This context helps the AI understand your business for better replies.
+                  </p>
+                </div>
               </div>
 
               {/* Notification Email */}
-              <div>
-                <label htmlFor="notificationEmail" className="block text-sm font-medium text-foreground">
+              <div className={rowClassName}>
+                <label htmlFor="notificationEmail" className={labelClassName}>
                   Notification Email
                 </label>
-                <input
-                  type="email"
-                  id="notificationEmail"
-                  value={settings.notificationEmail}
-                  onChange={(e) => handleInputChange('notificationEmail', e.target.value)}
-                  className={inputClassName}
-                  placeholder="your@email.com"
-                />
-                <p className="mt-1 text-sm text-muted-foreground">
-                  Email address for important notifications and reports.
-                </p>
+                <div className={fieldWrapClassName}>
+                  <input
+                    type="email"
+                    id="notificationEmail"
+                    value={settings.notificationEmail}
+                    onChange={(e) => handleInputChange('notificationEmail', e.target.value)}
+                    className={inputClassName}
+                    placeholder="your@email.com"
+                  />
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Email address for important notifications and reports.
+                  </p>
+                </div>
               </div>
 
               <div className="mt-6 flex justify-end">
@@ -314,58 +332,64 @@ export default function SettingsPage() {
             </div>
           ) : (
             <div className="space-y-6">
-              <div>
-                <label htmlFor="fetchIntervalMinutes" className="block text-sm font-medium text-foreground">
+              <div className={rowClassName}>
+                <label htmlFor="fetchIntervalMinutes" className={labelClassName}>
                   Fetch Comments Interval (minutes)
                 </label>
-                <input
-                  type="number"
-                  id="fetchIntervalMinutes"
-                  value={settings.fetchIntervalMinutes}
-                  onChange={(e) => handleInputChange('fetchIntervalMinutes', parseInt(e.target.value))}
-                  min="5"
-                  max="1440"
-                  className={numberInputClassName}
-                />
-                <p className="mt-1 text-sm text-muted-foreground">
-                  How often to pull new comments from YouTube/Instagram. Default: 30 min.
-                </p>
+                <div className={fieldWrapClassName}>
+                  <input
+                    type="number"
+                    id="fetchIntervalMinutes"
+                    value={settings.fetchIntervalMinutes}
+                    onChange={(e) => handleInputChange('fetchIntervalMinutes', parseInt(e.target.value))}
+                    min="5"
+                    max="1440"
+                    className={numberInputClassName}
+                  />
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    How often to pull new comments from YouTube/Instagram. Default: 30 min.
+                  </p>
+                </div>
               </div>
 
-              <div>
-                <label htmlFor="processIntervalMinutes" className="block text-sm font-medium text-foreground">
+              <div className={rowClassName}>
+                <label htmlFor="processIntervalMinutes" className={labelClassName}>
                   Process &amp; Generate Replies Interval (minutes)
                 </label>
-                <input
-                  type="number"
-                  id="processIntervalMinutes"
-                  value={settings.processIntervalMinutes}
-                  onChange={(e) => handleInputChange('processIntervalMinutes', parseInt(e.target.value))}
-                  min="5"
-                  max="1440"
-                  className={numberInputClassName}
-                />
-                <p className="mt-1 text-sm text-muted-foreground">
-                  How often Gemini AI classifies comments and generates replies. Default: 60 min.
-                </p>
+                <div className={fieldWrapClassName}>
+                  <input
+                    type="number"
+                    id="processIntervalMinutes"
+                    value={settings.processIntervalMinutes}
+                    onChange={(e) => handleInputChange('processIntervalMinutes', parseInt(e.target.value))}
+                    min="5"
+                    max="1440"
+                    className={numberInputClassName}
+                  />
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    How often Gemini AI classifies comments and generates replies. Default: 60 min.
+                  </p>
+                </div>
               </div>
 
-              <div>
-                <label htmlFor="postIntervalMinutes" className="block text-sm font-medium text-foreground">
+              <div className={rowClassName}>
+                <label htmlFor="postIntervalMinutes" className={labelClassName}>
                   Post Replies Interval (minutes)
                 </label>
-                <input
-                  type="number"
-                  id="postIntervalMinutes"
-                  value={settings.postIntervalMinutes}
-                  onChange={(e) => handleInputChange('postIntervalMinutes', parseInt(e.target.value))}
-                  min="5"
-                  max="1440"
-                  className={numberInputClassName}
-                />
-                <p className="mt-1 text-sm text-muted-foreground">
-                  How often approved replies are posted back to platforms. Default: 15 min.
-                </p>
+                <div className={fieldWrapClassName}>
+                  <input
+                    type="number"
+                    id="postIntervalMinutes"
+                    value={settings.postIntervalMinutes}
+                    onChange={(e) => handleInputChange('postIntervalMinutes', parseInt(e.target.value))}
+                    min="5"
+                    max="1440"
+                    className={numberInputClassName}
+                  />
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    How often approved replies are posted back to platforms. Default: 15 min.
+                  </p>
+                </div>
               </div>
 
               <div className="mt-6 flex justify-end">
