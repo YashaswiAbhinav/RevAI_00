@@ -89,6 +89,36 @@ export default function ReportsPage() {
   const visibleRecentActivity =
     reportData?.recentActivity.filter((activity) => activity.comments > 0 || activity.replies > 0) ?? []
 
+  const sentimentPositive = reportData?.sentimentBreakdown.positive ?? 0
+  const sentimentNeutral = reportData?.sentimentBreakdown.neutral ?? 0
+  const sentimentNegative = reportData?.sentimentBreakdown.negative ?? 0
+  const sentimentTotal = sentimentPositive + sentimentNeutral + sentimentNegative
+
+  const normalizedPositive = sentimentTotal > 0 ? (sentimentPositive / sentimentTotal) * 100 : 0
+  const normalizedNeutral = sentimentTotal > 0 ? (sentimentNeutral / sentimentTotal) * 100 : 0
+  const normalizedNegative = Math.max(0, 100 - normalizedPositive - normalizedNeutral)
+
+  const sentimentPieStyle = {
+    background: `conic-gradient(
+      rgb(74 222 128) 0% ${normalizedPositive}%,
+      rgb(148 163 184) ${normalizedPositive}% ${normalizedPositive + normalizedNeutral}%,
+      rgb(248 113 113) ${normalizedPositive + normalizedNeutral}% 100%
+    )`,
+  }
+
+  const youtubeCount = reportData?.platformStats.youtube ?? 0
+  const instagramCount = reportData?.platformStats.instagram ?? 0
+  const platformTotal = youtubeCount + instagramCount
+  const youtubePercent = platformTotal > 0 ? (youtubeCount / platformTotal) * 100 : 0
+  const instagramPercent = Math.max(0, 100 - youtubePercent)
+
+  const platformPieStyle = {
+    background: `conic-gradient(
+      rgb(248 113 113) 0% ${youtubePercent}%,
+      rgb(244 114 182) ${youtubePercent}% 100%
+    )`,
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -146,18 +176,24 @@ export default function ReportsPage() {
           <div className="bg-card overflow-hidden shadow rounded-lg gradient-card">
             <div className="p-5">
               <h3 className="text-sm font-medium text-muted-foreground">Sentiment Breakdown</h3>
-              <div className="mt-3 space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-green-400">Positive</span>
-                  <span className="text-sm font-medium text-foreground">{reportData.sentimentBreakdown.positive}%</span>
+              <div className="mt-4 flex items-center gap-4">
+                <div className="relative h-24 w-24 shrink-0 rounded-full" style={sentimentPieStyle}>
+                  <div className="absolute inset-4 rounded-full bg-card" />
                 </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Neutral</span>
-                  <span className="text-sm font-medium text-foreground">{reportData.sentimentBreakdown.neutral}%</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-red-400">Negative</span>
-                  <span className="text-sm font-medium text-foreground">{reportData.sentimentBreakdown.negative}%</span>
+
+                <div className="flex-1 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-green-400">Positive</span>
+                    <span className="text-sm font-medium text-foreground">{sentimentPositive}%</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-muted-foreground">Neutral</span>
+                    <span className="text-sm font-medium text-foreground">{sentimentNeutral}%</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-red-400">Negative</span>
+                    <span className="text-sm font-medium text-foreground">{sentimentNegative}%</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -167,14 +203,20 @@ export default function ReportsPage() {
           <div className="bg-card overflow-hidden shadow rounded-lg gradient-card">
             <div className="p-5">
               <h3 className="text-sm font-medium text-muted-foreground">Platform Distribution</h3>
-              <div className="mt-3 space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-red-400">YouTube</span>
-                  <span className="text-sm font-medium text-foreground">{reportData.platformStats.youtube}</span>
+              <div className="mt-4 flex items-center gap-4">
+                <div className="relative h-24 w-24 shrink-0 rounded-full" style={platformPieStyle}>
+                  <div className="absolute inset-4 rounded-full bg-card" />
                 </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-pink-400">Instagram</span>
-                  <span className="text-sm font-medium text-foreground">{reportData.platformStats.instagram}</span>
+
+                <div className="flex-1 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-red-400">YouTube</span>
+                    <span className="text-sm font-medium text-foreground">{youtubePercent.toFixed(1)}% ({youtubeCount})</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-pink-400">Instagram</span>
+                    <span className="text-sm font-medium text-foreground">{instagramPercent.toFixed(1)}% ({instagramCount})</span>
+                  </div>
                 </div>
               </div>
             </div>
