@@ -24,3 +24,25 @@
   - `app/dashboard/settings/page.tsx`
   - `app/globals.css`
 - Explicitly avoided backend/API/connectivity changes.
+
+## 2026-03-22 (Reports + Settings UX updates)
+
+- Updated reports experience:
+  - Added sentiment pie chart and platform distribution pie chart.
+  - Added multi-line platform trend graph (YouTube, Instagram, Facebook) with x-axis driven by selected day range (`7d`, `30d`, `90d`).
+  - Removed horizontal scrollbar from trend graph.
+  - Enabled hover interaction from Sentiment Breakdown:
+    - Hover `Positive` / `Neutral` / `Negative` to filter values in existing Platform Distribution and Platform Comments Trend graphs.
+  - Updated section titles to show filter state inline, e.g. `Platform Distribution (Positive Sentiment)`.
+- Updated reports text rendering:
+  - HTML entity decoding for questions/concerns and comments-side strings.
+  - Hidden zero-activity days in Recent Activity (days where comments = 0 and replies = 0).
+- Updated settings page UX:
+  - Visual polish of sections/cards/inputs in dark mode.
+  - Dropdown dark styling improvements.
+  - Removed spinner arrows from numeric inputs.
+- Files updated during this cycle include:
+  - `app/dashboard/reports/page.tsx`
+  - `app/api/reports/route.ts`
+  - `app/dashboard/settings/page.tsx`
+  - `app/globals.css`
