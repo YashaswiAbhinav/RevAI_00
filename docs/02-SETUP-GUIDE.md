@@ -62,7 +62,7 @@ cp .env.example .env.local
 #### Option A: Local PostgreSQL (Docker)
 ```bash
 docker run --name revai-postgres \
-  -e POSTGRES_PASSWORD=yourpassword \
+  -e POSTGRES_PASSWORD=revai@123 \
   -e POSTGRES_DB=revai \
   -p 5432:5432 \
   -d postgres:14
