@@ -163,6 +163,22 @@
 
 ## 📝 Notes & Decisions
 
+### 2026-03-24 — Reports page switched from demo-style view to real data view
+
+- **User Correction**: The reports page still felt like it was showing mock/demo analytics even though the backend data flow existed.
+- **Approach**:
+  - Expanded `/api/reports` to return real operational metrics from Firestore comments, including reply-state counts, response rate, average daily volume, recommendations, summary, and recent comments.
+  - Rebuilt the reports UI around that live payload instead of generic analytics cards.
+  - Added an interactive report layout with selectable daily activity bars and a recent-comments inspector so the screen feels like a live operations console, not a static demo.
+- **Follow-up Correction**: The `Activity / Daily flow` module was still too compressed because it shared width with other tiles.
+- **Follow-up Adjustment**:
+  - Moved the activity chart into its own full-width section.
+  - Increased the chart density and bar spacing so the module reads clearly as a primary visualization.
+- **Files Changed**:
+  - `app/api/reports/route.ts`
+  - `app/dashboard/reports/page.tsx`
+- **Impact**: Reports now reflect real comment and reply pipeline data from the selected time range and no longer rely on demo-feeling presentation.
+
 ### 2026-03-18 — Comments showing as pending after being posted
 
 - **Root Cause**: Two bugs working together:

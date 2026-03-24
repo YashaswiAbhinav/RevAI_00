@@ -90,6 +90,9 @@ function buildFallbackInsights(
   return {
     topQuestions,
     topConcerns,
+    summary: comments.length > 0
+      ? `Analyzed ${comments.length} comments from the selected time range.`
+      : 'No comments available for analysis.',
   }
 }
 
@@ -136,6 +139,7 @@ export async function GET(request: NextRequest) {
 
         return {
           text: String(data.text || ''),
+          author: String(data.author?.name || 'Unknown'),
           platform: String(data.platform || '').toLowerCase(),
           status: String(data.status || 'pending'),
           publishedAt,
@@ -151,16 +155,31 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({
         totalComments: 0,
         sentimentBreakdown: { positive: 0, neutral: 0, negative: 0 },
+        repliedCount: 0,
+        queuedCount: 0,
+        pendingCount: 0,
+        failedCount: 0,
+        rejectedCount: 0,
+        responseRate: 0,
+        averageDailyComments: 0,
         topQuestions: [],
         topConcerns: [],
+        recommendations: [],
+        summary: 'No comment data found for this time range.',
         platformStats: { youtube: 0, instagram: 0 },
         recentActivity: [],
+        recentComments: [],
       })
     }
 
     const sentimentCounts = { positive: 0, neutral: 0, negative: 0 }
     const platformStats = { youtube: 0, instagram: 0 }
     const activityMap = new Map<string, { date: string; comments: number; replies: number }>()
+    let repliedCount = 0
+    let queuedCount = 0
+    let pendingCount = 0
+    let failedCount = 0
+    let rejectedCount = 0
 
     for (let offset = 0; offset < days; offset += 1) {
       const day = new Date(reportStartDay)
@@ -180,6 +199,18 @@ export async function GET(request: NextRequest) {
         platformStats.instagram += 1
       }
 
+      if (comment.status === 'replied' || comment.posted) {
+        repliedCount += 1
+      } else if (comment.status === 'ready_to_post') {
+        queuedCount += 1
+      } else if (comment.status === 'failed') {
+        failedCount += 1
+      } else if (comment.status === 'rejected') {
+        rejectedCount += 1
+      } else {
+        pendingCount += 1
+      }
+
       const dayKey = formatDayKey(startOfUtcDay(comment.publishedAt))
       const bucket = activityMap.get(dayKey)
       if (bucket) {
@@ -194,6 +225,8 @@ export async function GET(request: NextRequest) {
 
     let topQuestions = fallbackInsights.topQuestions
     let topConcerns = fallbackInsights.topConcerns
+    let summary = fallbackInsights.summary
+    let recommendations: string[] = []
 
     try {
       const insights = await geminiAPI.generateInsights({
@@ -212,6 +245,8 @@ export async function GET(request: NextRequest) {
 
       topQuestions = insights.topQuestions.length > 0 ? insights.topQuestions.slice(0, 5) : topQuestions
       topConcerns = insights.topConcerns.length > 0 ? insights.topConcerns.slice(0, 5) : topConcerns
+      summary = insights.summary || summary
+      recommendations = insights.recommendations.slice(0, 4)
     } catch (error) {
       console.error('Gemini insights fallback used for reports:', error)
     }
@@ -223,14 +258,36 @@ export async function GET(request: NextRequest) {
     }
 
     const recentActivity = Array.from(activityMap.values()).sort((a, b) => b.date.localeCompare(a.date))
+    const recentComments = [...filteredComments]
+      .sort((a, b) => b.publishedAt.getTime() - a.publishedAt.getTime())
+      .slice(0, 6)
+      .map((comment) => ({
+        text: comment.text,
+        author: comment.author,
+        platform: comment.platform,
+        status: comment.status,
+        publishedAt: comment.publishedAt.toISOString(),
+      }))
+    const responseRate = Math.round((repliedCount / totalComments) * 100)
+    const averageDailyComments = Number((totalComments / days).toFixed(1))
 
     return NextResponse.json({
       totalComments,
       sentimentBreakdown,
+      repliedCount,
+      queuedCount,
+      pendingCount,
+      failedCount,
+      rejectedCount,
+      responseRate,
+      averageDailyComments,
       topQuestions,
       topConcerns,
+      recommendations,
+      summary,
       platformStats,
       recentActivity,
+      recentComments,
     })
   } catch (error) {
     console.error('Error fetching reports:', error)
