@@ -390,6 +390,65 @@
   - `app/dashboard/page.tsx`
 - **Impact**: The dashboard overview now remains usable during local setup issues or stopped services and surfaces a clear warning instead of throwing an unhandled runtime error.
 
+### 2026-03-24 — User correction on UI direction
+
+- **User Feedback**: The refreshed UI looked better overall, but the user explicitly called out that some screens had become too description-heavy and visually messy.
+- **Direction Change**:
+  - Reduce explanatory copy on-screen.
+  - Make the comments page denser and more useful for actually reading comments and replies.
+  - Prefer interaction and motion over long descriptive blocks.
+- **Agent Guidance**: Future UI work should bias toward cleaner information density and interactive affordances rather than adding more explanatory text.
+
+### 2026-03-24 — Comments page simplification and interaction pass
+
+- **Approach**:
+  - Replaced the heavier hero/description treatment with a more compact top area.
+  - Added quick status tabs, tighter filters, expandable AI reply panels, hover lift, and staggered entry animation.
+  - Kept the existing comment actions and automation logic intact while making the page feel faster and less cluttered.
+- **Files Changed**:
+  - `app/dashboard/comments/page.tsx`
+  - `app/globals.css`
+- **Impact**:
+  - Comments are easier to scan.
+  - AI responses are easier to reveal on demand without overwhelming the list.
+  - The page now feels more interactive and less like a static dashboard explainer.
+
+### 2026-03-24 — Second UI direction correction from user
+
+- **User Feedback**: The UI was still considered too complex and too explanatory even after the first simplification pass.
+- **Refined Direction**:
+  - Beautiful and interactive is the goal, but with less on-screen narration.
+  - Remove explanatory paragraphs where the interface itself can carry meaning.
+  - Avoid falling into a generic AI dashboard look while also avoiding over-designed clutter.
+- **Design Rule for Future Agents**: Prefer interaction models, spatial hierarchy, and motion over descriptive copy.
+
+### 2026-03-24 — Comments workspace redesign + lighter shell
+
+- **Approach**:
+  - Rebuilt comments into a master-detail workspace: selectable comment list on the left, focused response/detail panel on the right.
+  - Reduced descriptive copy in the shared dashboard shell and overview so the UI feels lighter.
+  - Added subtle motion (`rev-scale-in`, `rev-active-ring`) to make the interface feel alive without overloading it.
+- **Files Changed**:
+  - `app/dashboard/comments/page.tsx`
+  - `components/DashboardLayout.tsx`
+  - `app/dashboard/page.tsx`
+  - `app/globals.css`
+- **Impact**:
+  - Comments and responses are now easier to work with as a focused screen.
+  - The dashboard frame has less verbal clutter.
+  - The product is moving toward a more elegant, interaction-led UI language.
+
+### 2026-03-24 — Content asset card layout fix
+
+- **User Feedback**: On the content page, the available asset cards were not reading well and the start/stop monitoring button was overlapping or crowding nearby details.
+- **Fix**:
+  - Reworked each asset card into a clearer two-part structure.
+  - Kept thumbnail and metadata in the main body.
+  - Moved monitoring state + action button into a dedicated footer strip so controls no longer compete with title/description/meta rows.
+- **Files Changed**:
+  - `app/dashboard/content/page.tsx`
+- **Impact**: Available assets are easier to scan and the monitor action has a stable, non-overlapping placement.
+
 ---
 
 ## 🔄 How to Update This Log

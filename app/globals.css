@@ -176,6 +176,33 @@
   .rev-empty {
     @apply rev-panel px-6 py-8 text-center text-sm text-slate-500;
   }
+
+  .rev-hover-lift {
+    transition:
+      transform 220ms ease,
+      box-shadow 220ms ease,
+      border-color 220ms ease,
+      background-color 220ms ease;
+  }
+
+  .rev-hover-lift:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 24px 48px rgba(15, 23, 42, 0.12);
+  }
+
+  .rev-fade-up {
+    animation: rev-enter 420ms ease both;
+  }
+
+  .rev-scale-in {
+    animation: rev-scale-enter 240ms ease both;
+  }
+
+  .rev-active-ring {
+    box-shadow:
+      0 0 0 1px rgba(255, 123, 84, 0.22),
+      0 24px 44px rgba(243, 92, 49, 0.12);
+  }
 }
 
 @keyframes rev-float {
@@ -185,5 +212,27 @@
   }
   50% {
     transform: translate3d(0, -14px, 0) scale(1.04);
+  }
+}
+
+@keyframes rev-enter {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 14px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes rev-scale-enter {
+  from {
+    opacity: 0;
+    transform: scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
   }
 }

@@ -151,14 +151,11 @@ export default async function DashboardPage() {
             <h1 className="mt-3 text-4xl font-semibold tracking-tight text-slate-950 sm:text-5xl">
               Welcome back, {session.user.name || session.user.email}.
             </h1>
-            <p className="mt-4 max-w-2xl text-base leading-8 text-slate-600">
-              Your workspace is live. This view keeps the whole RevAI flow visible, from platform connection and monitored content to queued replies and reporting rhythm.
-            </p>
 
-            <div className="mt-8 flex flex-wrap gap-3">
+            <div className="mt-6 flex flex-wrap gap-3">
               <div className="rev-tag">
                 <Bot className="h-3.5 w-3.5" />
-                {user?.autoReplyEnabled ? 'Auto replies enabled' : 'Manual review mode'}
+                {user?.autoReplyEnabled ? 'Auto mode' : 'Manual mode'}
               </div>
               <div className="rounded-full border border-slate-200 bg-white/80 px-4 py-2 text-sm text-slate-600">
                 Tone: {replySettings?.tone || 'friendly'}
@@ -196,28 +193,28 @@ export default async function DashboardPage() {
           {
             label: 'Connected platforms',
             value: connections.length,
-            note: connections.length > 0 ? connections.map((connection) => connection.platform.toLowerCase()).join(', ') : 'No channels connected yet',
+            note: connections.length > 0 ? connections.map((connection) => connection.platform.toLowerCase()).join(', ') : 'No channels',
           },
           {
             label: 'Monitored content',
             value: monitoredContentCount,
-            note: 'Assets currently watched for new comments.',
+            note: 'Watching',
           },
           {
             label: 'Queued replies',
             value: queuedCount,
-            note: 'Recent comments ready to be posted.',
+            note: 'Ready to post',
           },
           {
             label: 'Recently posted',
             value: postedCount,
-            note: 'Replies marked as posted in recent activity.',
+            note: 'Recent activity',
           },
         ].map((item) => (
           <div key={item.label} className="rev-stat-card">
             <p className="text-sm text-slate-500">{item.label}</p>
             <p className="mt-3 text-4xl font-semibold text-slate-950">{item.value}</p>
-            <p className="mt-3 text-sm leading-6 text-slate-500">{item.note}</p>
+            <p className="mt-2 text-sm leading-6 text-slate-500">{item.note}</p>
           </div>
         ))}
       </section>
@@ -227,16 +224,16 @@ export default async function DashboardPage() {
           <div className="flex items-center justify-between gap-4">
             <div>
               <p className="rev-kicker">Recent Pipeline Activity</p>
-              <h2 className="mt-2 text-2xl font-semibold text-slate-950">Latest comment movement</h2>
+              <h2 className="mt-2 text-2xl font-semibold text-slate-950">Latest comments</h2>
             </div>
             <Link href="/dashboard/comments" className="rev-button-secondary">
-              Open comments
+              Open
             </Link>
           </div>
 
           <div className="mt-6 space-y-3">
             {recentComments.length > 0 ? recentComments.map((comment) => (
-              <div key={comment.id} className="rounded-[1.5rem] border border-slate-200/70 bg-white/80 p-4">
+              <div key={comment.id} className="rounded-[1.5rem] border border-slate-200/70 bg-white/80 p-4 rev-hover-lift">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                   <div>
                     <p className="text-sm font-semibold text-slate-900">{comment.authorName}</p>
@@ -254,7 +251,7 @@ export default async function DashboardPage() {
               </div>
             )) : (
               <div className="rev-empty">
-                No comments have reached this workspace yet. Connect a platform and monitor content to start the pipeline.
+                No recent comments yet.
               </div>
             )}
           </div>
@@ -262,7 +259,7 @@ export default async function DashboardPage() {
 
         <div className="rev-panel p-6">
           <p className="rev-kicker">Quick Actions</p>
-          <h2 className="mt-2 text-2xl font-semibold text-slate-950">Move the demo forward</h2>
+          <h2 className="mt-2 text-2xl font-semibold text-slate-950">Shortcuts</h2>
           <div className="mt-6 grid gap-3">
             {quickActions.map((action) => {
               const Icon = action.icon
@@ -270,7 +267,7 @@ export default async function DashboardPage() {
                 <Link
                   key={action.href}
                   href={action.href}
-                  className="group rounded-[1.5rem] border border-slate-200/70 bg-white/80 p-4 hover:border-orange-200 hover:bg-white"
+                  className="group rounded-[1.5rem] border border-slate-200/70 bg-white/80 p-4 hover:border-orange-200 hover:bg-white rev-hover-lift"
                 >
                   <div className="flex items-start gap-4">
                     <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-slate-950 text-white">
@@ -281,7 +278,7 @@ export default async function DashboardPage() {
                         <h3 className="text-sm font-semibold text-slate-950">{action.title}</h3>
                         <ArrowRight className="h-4 w-4 text-slate-400 transition group-hover:translate-x-0.5 group-hover:text-slate-950" />
                       </div>
-                      <p className="mt-1 text-sm leading-6 text-slate-600">{action.description}</p>
+                      <p className="mt-1 text-sm text-slate-500">{action.description}</p>
                     </div>
                   </div>
                 </Link>

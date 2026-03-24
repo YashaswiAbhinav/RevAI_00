@@ -327,56 +327,67 @@ export default function ContentPage() {
             ) : (
               <div className="mt-6 grid gap-4">
                 {content.map((item) => (
-                  <article key={item.id} className="rounded-[1.75rem] border border-slate-200/70 bg-white/78 p-4 shadow-sm">
-                    <div className="flex flex-col gap-4 lg:flex-row lg:items-center">
-                      <div className="flex min-w-0 flex-1 items-start gap-4">
+                  <article key={item.id} className="rounded-[1.75rem] border border-slate-200/70 bg-white/78 p-4 shadow-sm rev-hover-lift">
+                    <div className="flex min-w-0 items-start gap-4">
+                      <div className="shrink-0">
                         {item.thumbnailUrl ? (
                           <img
                             src={item.thumbnailUrl}
                             alt={item.title}
-                            className="h-24 w-32 rounded-2xl object-cover shadow-sm"
+                            className="h-24 w-32 rounded-2xl object-cover shadow-sm sm:h-28 sm:w-40"
                           />
                         ) : (
-                          <div className="flex h-24 w-32 items-center justify-center rounded-2xl bg-slate-950 text-white">
+                          <div className="flex h-24 w-32 items-center justify-center rounded-2xl bg-slate-950 text-white sm:h-28 sm:w-40">
                             <PlayCircle className="h-8 w-8" />
                           </div>
                         )}
-
-                        <div className="min-w-0 flex-1">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <span className="rounded-full bg-slate-950 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-white">
-                              {item.platform}
-                            </span>
-                            <span className={`rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] ${
-                              item.isMonitored
-                                ? 'bg-emerald-50 text-emerald-700'
-                                : 'bg-slate-100 text-slate-600'
-                            }`}>
-                              {item.isMonitored ? 'Monitored' : 'Available'}
-                            </span>
-                          </div>
-                          <h3 className="mt-3 text-lg font-semibold text-slate-950">{item.title}</h3>
-                          {item.description && (
-                            <p className="mt-2 line-clamp-2 text-sm leading-7 text-slate-600">{item.description}</p>
-                          )}
-                          <div className="mt-3 flex flex-wrap items-center gap-3 text-sm text-slate-500">
-                            <span className="inline-flex items-center gap-2">
-                              <Eye className="h-4 w-4" />
-                              {new Date(item.publishedAt).toLocaleDateString()}
-                            </span>
-                            <span className="inline-flex items-center gap-2">
-                              <Layers3 className="h-4 w-4" />
-                              ID: {item.id}
-                            </span>
-                          </div>
-                        </div>
                       </div>
 
-                      <div className="flex w-full flex-col gap-3 lg:w-auto lg:min-w-[220px]">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="rounded-full bg-slate-950 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-white">
+                            {item.platform}
+                          </span>
+                          <span className={`rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] ${
+                            item.isMonitored
+                              ? 'bg-emerald-50 text-emerald-700'
+                              : 'bg-slate-100 text-slate-600'
+                          }`}>
+                            {item.isMonitored ? 'Monitored' : 'Available'}
+                          </span>
+                        </div>
+
+                        <h3 className="mt-3 text-lg font-semibold text-slate-950">{item.title}</h3>
+
+                        {item.description && (
+                          <p className="mt-2 line-clamp-2 text-sm leading-6 text-slate-600">{item.description}</p>
+                        )}
+
+                        <div className="mt-3 grid gap-2 text-sm text-slate-500 sm:grid-cols-2">
+                          <span className="inline-flex items-center gap-2">
+                            <Eye className="h-4 w-4" />
+                            {new Date(item.publishedAt).toLocaleDateString()}
+                          </span>
+                          <span className="inline-flex items-center gap-2 break-all sm:justify-end">
+                            <Layers3 className="h-4 w-4 shrink-0" />
+                            <span className="truncate">ID: {item.id}</span>
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="mt-4 flex flex-col gap-3 rounded-[1.35rem] bg-slate-950/4 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+                      <div className="text-sm text-slate-600">
+                        {item.isMonitored
+                          ? 'Currently feeding the comment pipeline'
+                          : 'Not part of the monitored set yet'}
+                      </div>
+
+                      <div className="flex w-full sm:w-auto">
                         <button
                           onClick={() => toggleMonitoring(item)}
                           disabled={savingId === item.id}
-                          className={`w-full rounded-2xl px-5 py-3 text-sm font-semibold text-white ${
+                          className={`w-full rounded-2xl px-5 py-3 text-sm font-semibold text-white sm:min-w-[190px] ${
                             item.isMonitored
                               ? 'bg-gradient-to-r from-rose-500 to-red-500'
                               : 'bg-gradient-to-r from-[color:var(--rev-primary)] to-[color:var(--rev-primary-strong)]'
@@ -388,12 +399,6 @@ export default function ContentPage() {
                             ? 'Stop monitoring'
                             : 'Start monitoring'}
                         </button>
-
-                        <div className="rounded-2xl bg-slate-950/4 px-4 py-3 text-sm text-slate-600">
-                          {item.isMonitored
-                            ? 'This asset is feeding comments into the automation pipeline.'
-                            : 'Enable monitoring to include this asset in comment fetch runs.'}
-                        </div>
                       </div>
                     </div>
                   </article>

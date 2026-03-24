@@ -1,15 +1,15 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import {
+  AlertCircle,
   CheckCircle2,
   Clock3,
-  Filter,
-  MessageSquare,
   RefreshCcw,
   Search,
+  Send,
   Sparkles,
   Wand2,
   XCircle,
@@ -36,6 +36,13 @@ interface FilterOptions {
   search: string
 }
 
+const STATUS_TABS = [
+  { label: 'All', value: '' },
+  { label: 'Pending', value: 'pending' },
+  { label: 'Queued', value: 'ready_to_post' },
+  { label: 'Posted', value: 'replied' },
+]
+
 export default function CommentsPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
@@ -46,6 +53,7 @@ export default function CommentsPage() {
   const [autoProcessing, setAutoProcessing] = useState(false)
   const [generating, setGenerating] = useState<string | null>(null)
   const [approving, setApproving] = useState<string | null>(null)
+  const [selectedCommentId, setSelectedCommentId] = useState<string | null>(null)
   const hasLoadedRef = useRef(false)
   const hasAutoProcessedRef = useRef(false)
   const [filters, setFilters] = useState<FilterOptions>({
@@ -68,6 +76,17 @@ export default function CommentsPage() {
       return () => controller.abort()
     }
   }, [session, filters])
+
+  useEffect(() => {
+    if (comments.length === 0) {
+      setSelectedCommentId(null)
+      return
+    }
+
+    if (!selectedCommentId || !comments.some((comment) => comment.id === selectedCommentId)) {
+      setSelectedCommentId(comments[0].id)
+    }
+  }, [comments, selectedCommentId])
 
   const loadCommentsPageData = async (signal?: AbortSignal) => {
     await Promise.all([
@@ -241,6 +260,11 @@ export default function CommentsPage() {
     failed: comments.filter((comment) => comment.status === 'failed').length,
   }
 
+  const selectedComment = useMemo(
+    () => comments.find((comment) => comment.id === selectedCommentId) || null,
+    [comments, selectedCommentId]
+  )
+
   const getSentimentStyle = (sentiment?: string) => {
     switch (sentiment) {
       case 'positive':
@@ -273,6 +297,8 @@ export default function CommentsPage() {
     }
   }
 
+  const formatStatusLabel = (statusValue: string) => statusValue.replace(/_/g, ' ')
+
   if (status === 'loading') {
     return (
       <div className="flex h-64 items-center justify-center">
@@ -280,7 +306,7 @@ export default function CommentsPage() {
           <div className="h-10 w-10 animate-spin rounded-full border-2 border-slate-200 border-t-[color:var(--rev-primary)]" />
           <div>
             <p className="text-sm font-semibold text-slate-900">Loading comments</p>
-            <p className="text-sm text-slate-500">Preparing the comment command center...</p>
+            <p className="text-sm text-slate-500">Opening queue...</p>
           </div>
         </div>
       </div>
@@ -288,249 +314,301 @@ export default function CommentsPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <section className="rev-panel-strong px-6 py-8 sm:px-8">
-        <div className="grid gap-6 lg:grid-cols-[1.08fr_0.92fr]">
-          <div>
-            <p className="rev-kicker">Comment Pipeline</p>
-            <h1 className="mt-3 text-4xl font-semibold tracking-tight text-slate-950">Track every comment from intake to posted reply.</h1>
-            <p className="mt-4 max-w-2xl text-base leading-8 text-slate-600">
-              This page is the operational heart of the product. It shows what arrived, what the AI generated, what is queued next, and which items still need attention.
-            </p>
+    <div className="space-y-4">
+      <section className="rev-panel-strong overflow-hidden px-5 py-5 sm:px-6">
+        <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+          <div className="flex flex-wrap items-center gap-3">
+            <div>
+              <p className="rev-kicker">Comments</p>
+              <h1 className="mt-2 text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">Inbox</h1>
+            </div>
             {autoReplyEnabled && (
-              <div className="mt-6 inline-flex items-center gap-2 rounded-full bg-emerald-50 px-4 py-2 text-sm font-medium text-emerald-700">
+              <span className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-700">
                 <Sparkles className="h-4 w-4" />
-                Automatic replies are enabled for eligible comments.
-              </div>
+                Auto
+              </span>
             )}
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             {[
-              { label: 'Visible comments', value: summary.total, note: 'After filters are applied.' },
-              { label: 'Queued', value: summary.queued, note: 'Ready for the posting step.' },
-              { label: 'Posted', value: summary.posted, note: 'Already marked as replied.' },
-              { label: 'Failed', value: summary.failed, note: 'Needs a retry or follow-up.' },
+              { label: 'All', value: summary.total },
+              { label: 'Queued', value: summary.queued },
+              { label: 'Posted', value: summary.posted },
+              { label: 'Failed', value: summary.failed },
             ].map((item) => (
-              <div key={item.label} className="rev-stat-card">
-                <p className="text-sm text-slate-500">{item.label}</p>
-                <p className="mt-3 text-4xl font-semibold text-slate-950">{item.value}</p>
-                <p className="mt-3 text-sm text-slate-500">{item.note}</p>
+              <div key={item.label} className="rounded-[1.35rem] bg-white/70 px-4 py-3 shadow-sm rev-hover-lift">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400">{item.label}</p>
+                <p className="mt-2 text-2xl font-semibold text-slate-950">{item.value}</p>
               </div>
             ))}
           </div>
         </div>
-      </section>
 
-      <section className="rev-panel p-6">
-        <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <p className="rev-kicker">Filter Console</p>
-            <h2 className="mt-2 text-2xl font-semibold text-slate-950">Narrow the live queue</h2>
-          </div>
-          <div className="flex flex-wrap items-center gap-3 text-sm text-slate-500">
-            {refreshing && (
-              <span className="inline-flex items-center gap-2 rounded-full bg-sky-50 px-3 py-2 text-sky-700">
-                <RefreshCcw className="h-4 w-4" />
-                Refreshing
-              </span>
-            )}
-            {autoProcessing && (
-              <span className="inline-flex items-center gap-2 rounded-full bg-amber-50 px-3 py-2 text-amber-700">
-                <Sparkles className="h-4 w-4" />
-                Auto-processing new comments
-              </span>
-            )}
-          </div>
-        </div>
-
-        <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-          <label className="space-y-2 text-sm font-medium text-slate-700">
-            <span className="inline-flex items-center gap-2">
-              <Filter className="h-4 w-4 text-slate-400" />
-              Platform
+        <div className="mt-4 flex flex-wrap items-center gap-2 text-sm">
+          {refreshing && (
+            <span className="inline-flex items-center gap-2 rounded-full bg-sky-50 px-3 py-2 font-medium text-sky-700">
+              <RefreshCcw className="h-4 w-4 animate-spin" />
+              Refreshing
             </span>
-            <select
-              value={filters.platform}
-              onChange={(event) => setFilters((previous) => ({ ...previous, platform: event.target.value }))}
-              className="rev-input"
-            >
-              <option value="">All platforms</option>
-              <option value="youtube">YouTube</option>
-              <option value="instagram">Instagram</option>
-            </select>
-          </label>
-
-          <label className="space-y-2 text-sm font-medium text-slate-700">
-            Sentiment
-            <select
-              value={filters.sentiment}
-              onChange={(event) => setFilters((previous) => ({ ...previous, sentiment: event.target.value }))}
-              className="rev-input"
-            >
-              <option value="">All sentiments</option>
-              <option value="positive">Positive</option>
-              <option value="neutral">Neutral</option>
-              <option value="negative">Negative</option>
-            </select>
-          </label>
-
-          <label className="space-y-2 text-sm font-medium text-slate-700">
-            Status
-            <select
-              value={filters.status}
-              onChange={(event) => setFilters((previous) => ({ ...previous, status: event.target.value }))}
-              className="rev-input"
-            >
-              <option value="">All statuses</option>
-              <option value="pending">Pending</option>
-              <option value="classified">Classified</option>
-              <option value="ready_to_post">Ready to post</option>
-              <option value="replied">Posted</option>
-              <option value="failed">Failed</option>
-              <option value="rejected">Rejected</option>
-            </select>
-          </label>
-
-          <label className="space-y-2 text-sm font-medium text-slate-700">
-            <span className="inline-flex items-center gap-2">
-              <Search className="h-4 w-4 text-slate-400" />
-              Search
+          )}
+          {autoProcessing && (
+            <span className="inline-flex items-center gap-2 rounded-full bg-amber-50 px-3 py-2 font-medium text-amber-700">
+              <Sparkles className="h-4 w-4" />
+              Processing
             </span>
-            <input
-              type="text"
-              value={filters.search}
-              onChange={(event) => setFilters((previous) => ({ ...previous, search: event.target.value }))}
-              placeholder="Search author or comment"
-              className="rev-input"
-            />
-          </label>
+          )}
         </div>
       </section>
 
-      <section className="space-y-4">
-        {loading ? (
-          <div className="rev-panel flex items-center justify-center gap-4 px-6 py-14">
-            <div className="h-10 w-10 animate-spin rounded-full border-2 border-slate-200 border-t-[color:var(--rev-primary)]" />
-            <span className="text-sm text-slate-600">Loading comments...</span>
+      <section className="rev-panel p-4 sm:p-5">
+        <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+          <div className="flex flex-wrap gap-2">
+            {STATUS_TABS.map((tab) => {
+              const active = filters.status === tab.value
+              return (
+                <button
+                  key={tab.label}
+                  type="button"
+                  onClick={() => setFilters((previous) => ({ ...previous, status: tab.value }))}
+                  className={`rounded-full px-4 py-2 text-sm font-medium ${
+                    active
+                      ? 'bg-slate-950 text-white shadow-sm'
+                      : 'bg-white text-slate-600 hover:bg-slate-100'
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              )
+            })}
           </div>
-        ) : comments.length === 0 ? (
-          <div className="rev-empty">
-            No comments match your current filters. Connect platforms and monitor content to feed this queue.
+
+          <div className="flex flex-col gap-3 sm:flex-row">
+            <label className="relative min-w-[240px]">
+              <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <input
+                type="text"
+                value={filters.search}
+                onChange={(event) => setFilters((previous) => ({ ...previous, search: event.target.value }))}
+                placeholder="Search"
+                className="rev-input pl-11"
+              />
+            </label>
+
+            <div className="flex gap-3">
+              <select
+                value={filters.platform}
+                onChange={(event) => setFilters((previous) => ({ ...previous, platform: event.target.value }))}
+                className="rev-input min-w-[135px]"
+              >
+                <option value="">Platform</option>
+                <option value="youtube">YouTube</option>
+                <option value="instagram">Instagram</option>
+              </select>
+
+              <select
+                value={filters.sentiment}
+                onChange={(event) => setFilters((previous) => ({ ...previous, sentiment: event.target.value }))}
+                className="rev-input min-w-[135px]"
+              >
+                <option value="">Sentiment</option>
+                <option value="positive">Positive</option>
+                <option value="neutral">Neutral</option>
+                <option value="negative">Negative</option>
+              </select>
+            </div>
           </div>
-        ) : (
-          comments.map((comment) => (
-            <article key={comment.id} className="rev-panel-strong p-5 sm:p-6">
-              <div className="flex flex-col gap-5">
-                <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                  <div className="flex min-w-0 items-start gap-4">
+        </div>
+      </section>
+
+      <section className="grid gap-4 xl:grid-cols-[0.92fr_1.08fr]">
+        <div className="rev-panel-strong min-h-[560px] overflow-hidden p-0">
+          {loading ? (
+            <div className="flex h-full items-center justify-center gap-4 px-6 py-14">
+              <div className="h-10 w-10 animate-spin rounded-full border-2 border-slate-200 border-t-[color:var(--rev-primary)]" />
+              <span className="text-sm text-slate-600">Loading queue...</span>
+            </div>
+          ) : comments.length === 0 ? (
+            <div className="flex h-full items-center justify-center px-6 text-center text-sm text-slate-500">
+              No comments match the current filters.
+            </div>
+          ) : (
+            <div className="divide-y divide-slate-200/70">
+              {comments.map((comment, index) => {
+                const selected = comment.id === selectedCommentId
+                return (
+                  <button
+                    key={comment.id}
+                    type="button"
+                    onClick={() => setSelectedCommentId(comment.id)}
+                    className={`group flex w-full items-start gap-3 px-4 py-4 text-left transition ${
+                      selected
+                        ? 'bg-[linear-gradient(135deg,rgba(255,123,84,0.12),rgba(255,255,255,0.95))] rev-active-ring'
+                        : 'bg-white/50 hover:bg-white/85'
+                    } rev-fade-up`}
+                    style={{ animationDelay: `${Math.min(index * 32, 180)}ms` }}
+                  >
                     {comment.authorAvatar ? (
                       <img
                         src={comment.authorAvatar}
                         alt={comment.author}
-                        className="h-12 w-12 rounded-2xl object-cover shadow-sm"
+                        className="mt-0.5 h-10 w-10 rounded-2xl object-cover shadow-sm"
                       />
                     ) : (
-                      <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-950 text-white">
-                        <MessageSquare className="h-5 w-5" />
+                      <div className="mt-0.5 flex h-10 w-10 items-center justify-center rounded-2xl bg-slate-950 text-white">
+                        <span className="text-xs font-semibold">{comment.author.slice(0, 1).toUpperCase()}</span>
                       </div>
                     )}
 
-                    <div className="min-w-0">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <p className="text-sm font-semibold text-slate-950">{comment.author}</p>
-                        <span className="rounded-full bg-slate-950 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-white">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center justify-between gap-3">
+                        <p className="truncate text-sm font-semibold text-slate-950">{comment.author}</p>
+                        <span className="text-xs text-slate-400">
+                          {new Date(comment.publishedAt).toLocaleDateString()}
+                        </span>
+                      </div>
+
+                      <p className="mt-2 line-clamp-2 text-sm leading-6 text-slate-600">{comment.text}</p>
+
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        <span className="rounded-full bg-slate-950 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-white">
                           {comment.platform}
                         </span>
-                        <span className={`rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] ${getStatusStyle(comment.status)}`}>
-                          {comment.status.replace(/_/g, ' ')}
+                        <span className={`rounded-full px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] ${getStatusStyle(comment.status)}`}>
+                          {formatStatusLabel(comment.status)}
                         </span>
                         {comment.sentiment && (
-                          <span className={`rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] ${getSentimentStyle(comment.sentiment)}`}>
+                          <span className={`rounded-full px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] ${getSentimentStyle(comment.sentiment)}`}>
                             {comment.sentiment}
                           </span>
                         )}
                       </div>
-                      <p className="mt-2 text-sm text-slate-500">
-                        {new Date(comment.publishedAt).toLocaleString()} • {comment.contentTitle}
-                      </p>
                     </div>
-                  </div>
+                  </button>
+                )
+              })}
+            </div>
+          )}
+        </div>
 
-                  <div className="flex flex-wrap items-center gap-3">
-                    {!autoReplyEnabled && !comment.aiReply && (comment.status === 'pending' || comment.status === 'classified') && (
-                      <button
-                        onClick={() => generateAIReply(comment.id)}
-                        disabled={generating === comment.id}
-                        className="rev-button-secondary disabled:cursor-not-allowed disabled:opacity-60"
-                      >
-                        <Wand2 className="h-4 w-4" />
-                        {generating === comment.id ? 'Generating...' : 'Generate reply'}
-                      </button>
-                    )}
-
-                    {!autoReplyEnabled && comment.aiReply && (comment.status === 'pending' || comment.status === 'classified') && (
-                      <>
-                        <button
-                          onClick={() => approveReply(comment.id)}
-                          disabled={approving === comment.id}
-                          className="rev-button-primary disabled:cursor-not-allowed disabled:opacity-60"
-                        >
-                          {approving === comment.id ? 'Approving...' : 'Queue for posting'}
-                        </button>
-                        <button
-                          onClick={() => rejectReply(comment.id)}
-                          className="rev-button-secondary"
-                        >
-                          <XCircle className="h-4 w-4" />
-                          Reject
-                        </button>
-                      </>
-                    )}
-
-                    {comment.status === 'ready_to_post' && (
-                      <span className="inline-flex items-center gap-2 rounded-full bg-sky-50 px-4 py-2 text-sm font-medium text-sky-700">
-                        <Clock3 className="h-4 w-4" />
-                        Queued for posting
+        <div className="rev-panel-strong min-h-[560px] p-5 sm:p-6">
+          {selectedComment ? (
+            <div className="rev-scale-in flex h-full flex-col">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h2 className="text-2xl font-semibold text-slate-950">{selectedComment.author}</h2>
+                    <span className={`rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] ${getStatusStyle(selectedComment.status)}`}>
+                      {formatStatusLabel(selectedComment.status)}
+                    </span>
+                    {selectedComment.sentiment && (
+                      <span className={`rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] ${getSentimentStyle(selectedComment.sentiment)}`}>
+                        {selectedComment.sentiment}
                       </span>
                     )}
-
-                    {comment.status === 'replied' && (
-                      <span className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-4 py-2 text-sm font-medium text-emerald-700">
-                        <CheckCircle2 className="h-4 w-4" />
-                        Posted
-                      </span>
-                    )}
-
-                    {comment.status === 'failed' && (
-                      <button
-                        onClick={() => generateAIReply(comment.id)}
-                        disabled={generating === comment.id}
-                        className="rev-button-secondary disabled:cursor-not-allowed disabled:opacity-60"
-                      >
-                        <RefreshCcw className="h-4 w-4" />
-                        {generating === comment.id ? 'Retrying...' : 'Retry'}
-                      </button>
-                    )}
                   </div>
+                  <p className="mt-2 text-sm text-slate-500">
+                    {selectedComment.platform} • {selectedComment.contentTitle}
+                  </p>
                 </div>
 
-                <div className="rounded-[1.5rem] border border-slate-200/70 bg-white/80 px-4 py-4">
-                  <p className="text-sm leading-7 text-slate-700">{comment.text}</p>
+                <div className="text-right text-sm text-slate-400">
+                  {new Date(selectedComment.publishedAt).toLocaleString()}
+                </div>
+              </div>
+
+              <div className="mt-6 flex-1 space-y-4">
+                <div className="rounded-[1.6rem] bg-white px-5 py-5 shadow-sm">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Comment</p>
+                  <p className="mt-3 text-[15px] leading-8 text-slate-700">{selectedComment.text}</p>
                 </div>
 
-                {comment.aiReply && (
-                  <div className="rounded-[1.5rem] border border-orange-200 bg-orange-50/80 px-4 py-4">
-                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[color:var(--rev-primary-strong)]">
-                      AI generated reply
-                    </p>
-                    <p className="mt-2 text-sm leading-7 text-slate-700">{comment.aiReply}</p>
+                {selectedComment.aiReply ? (
+                  <div className="rounded-[1.6rem] border border-orange-200 bg-[linear-gradient(180deg,rgba(255,245,238,0.95),rgba(255,250,246,0.98))] px-5 py-5 shadow-sm">
+                    <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-[color:var(--rev-primary-strong)]">
+                      <Sparkles className="h-3.5 w-3.5" />
+                      AI reply
+                    </div>
+                    <p className="mt-3 text-[15px] leading-8 text-slate-700">{selectedComment.aiReply}</p>
+                  </div>
+                ) : (
+                  <div className="flex h-[180px] items-center justify-center rounded-[1.6rem] border border-dashed border-slate-200 bg-white/60 text-sm text-slate-400">
+                    No reply generated yet
                   </div>
                 )}
               </div>
-            </article>
-          ))
-        )}
+
+              <div className="mt-6 flex flex-wrap gap-3">
+                {!autoReplyEnabled && !selectedComment.aiReply && (selectedComment.status === 'pending' || selectedComment.status === 'classified') && (
+                  <button
+                    onClick={() => generateAIReply(selectedComment.id)}
+                    disabled={generating === selectedComment.id}
+                    className="rev-button-secondary px-4 py-2 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    <Wand2 className={`h-4 w-4 ${generating === selectedComment.id ? 'animate-spin' : ''}`} />
+                    {generating === selectedComment.id ? 'Generating' : 'Generate'}
+                  </button>
+                )}
+
+                {!autoReplyEnabled && selectedComment.aiReply && (selectedComment.status === 'pending' || selectedComment.status === 'classified') && (
+                  <>
+                    <button
+                      onClick={() => approveReply(selectedComment.id)}
+                      disabled={approving === selectedComment.id}
+                      className="rev-button-primary px-4 py-2 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      <Send className="h-4 w-4" />
+                      {approving === selectedComment.id ? 'Queueing' : 'Queue'}
+                    </button>
+                    <button
+                      onClick={() => rejectReply(selectedComment.id)}
+                      className="rev-button-secondary px-4 py-2"
+                    >
+                      <XCircle className="h-4 w-4" />
+                      Reject
+                    </button>
+                  </>
+                )}
+
+                {selectedComment.status === 'ready_to_post' && (
+                  <span className="inline-flex items-center gap-2 rounded-full bg-sky-50 px-4 py-2 text-sm font-medium text-sky-700">
+                    <Clock3 className="h-4 w-4" />
+                    Queued for posting
+                  </span>
+                )}
+
+                {selectedComment.status === 'replied' && (
+                  <span className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-4 py-2 text-sm font-medium text-emerald-700">
+                    <CheckCircle2 className="h-4 w-4" />
+                    Posted
+                  </span>
+                )}
+
+                {selectedComment.status === 'failed' && (
+                  <button
+                    onClick={() => generateAIReply(selectedComment.id)}
+                    disabled={generating === selectedComment.id}
+                    className="rev-button-secondary px-4 py-2 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    <RefreshCcw className={`h-4 w-4 ${generating === selectedComment.id ? 'animate-spin' : ''}`} />
+                    Retry
+                  </button>
+                )}
+
+                {selectedComment.status === 'rejected' && (
+                  <span className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-4 py-2 text-sm font-medium text-slate-600">
+                    <AlertCircle className="h-4 w-4" />
+                    Rejected
+                  </span>
+                )}
+              </div>
+            </div>
+          ) : (
+            <div className="flex h-full items-center justify-center text-sm text-slate-500">
+              Select a comment to view details.
+            </div>
+          )}
+        </div>
       </section>
     </div>
   )

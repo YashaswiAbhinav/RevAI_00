@@ -6,7 +6,6 @@ import { usePathname } from 'next/navigation'
 import {
   BarChart3,
   Bot,
-  ChevronRight,
   LayoutDashboard,
   Link2,
   LogOut,
@@ -67,16 +66,10 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               </div>
             </div>
 
-            <div className="mt-6 rounded-[1.5rem] bg-slate-950 px-4 py-4 text-white">
-              <div className="flex items-center gap-3">
-                <div className="rounded-2xl bg-white/10 p-2">
-                  <Workflow className="h-4 w-4 text-[#ff9f7f]" />
-                </div>
-                <div>
-                  <p className="text-sm font-semibold">Pipeline active</p>
-                  <p className="text-xs text-slate-300">Connect, monitor, automate, analyze.</p>
-                </div>
-              </div>
+            <div className="mt-6 flex items-center gap-2 rounded-full bg-slate-950 px-4 py-3 text-sm font-medium text-white">
+              <span className="inline-flex h-2.5 w-2.5 rounded-full bg-emerald-400 animate-pulse" />
+              Live workspace
+              <Workflow className="ml-auto h-4 w-4 text-[#ff9f7f]" />
             </div>
 
             <nav className="mt-6 grid gap-2">
@@ -102,7 +95,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                       </span>
                       {item.name}
                     </span>
-                    <ChevronRight className={`h-4 w-4 transition ${current ? 'text-[color:var(--rev-primary-strong)]' : 'text-slate-400 group-hover:translate-x-0.5'}`} />
+                    <span className={`h-2.5 w-2.5 rounded-full transition ${current ? 'bg-[color:var(--rev-primary-strong)]' : 'bg-transparent group-hover:bg-slate-300'}`} />
                   </Link>
                 )
               })}
@@ -139,9 +132,6 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               <h2 className="mt-1 text-2xl font-semibold text-slate-950">
                 {navigation.find((item) => item.href === pathname)?.name || 'Dashboard'}
               </h2>
-              <p className="mt-1 text-sm text-slate-500">
-                Keep the workflow moving from connection setup to AI-powered posting.
-              </p>
             </div>
 
             <div className="flex flex-wrap items-center gap-3">
@@ -149,7 +139,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                 {session?.user?.email}
               </div>
               <Link href="/dashboard/settings" className="rev-button-secondary">
-                Tune automation
+                Settings
               </Link>
             </div>
           </div>
