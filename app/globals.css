@@ -4,56 +4,186 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    --background: 35 45% 98%;
+    --foreground: 223 32% 12%;
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 223 32% 12%;
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 221.2 83.2% 53.3%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96%;
-    --secondary-foreground: 222.2 84% 4.9%;
-    --muted: 210 40% 96%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96%;
-    --accent-foreground: 222.2 84% 4.9%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 221.2 83.2% 53.3%;
-    --radius: 0.5rem;
-  }
-
-  .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 217.2 91.2% 59.8%;
-    --primary-foreground: 222.2 84% 4.9%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 224.3 76.3% 94.1%;
+    --popover-foreground: 223 32% 12%;
+    --primary: 15 94% 61%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 170 43% 93%;
+    --secondary-foreground: 223 32% 18%;
+    --muted: 215 28% 94%;
+    --muted-foreground: 222 14% 38%;
+    --accent: 43 94% 92%;
+    --accent-foreground: 223 32% 18%;
+    --destructive: 0 74% 58%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 220 24% 88%;
+    --input: 220 24% 88%;
+    --ring: 15 94% 61%;
+    --radius: 1.2rem;
+    --rev-primary: #ff7b54;
+    --rev-primary-strong: #f35c31;
+    --rev-secondary: #13baa6;
+    --rev-ink: #0f172a;
+    --rev-cream: #fffaf1;
+    --rev-panel: rgba(255, 255, 255, 0.84);
+    --rev-panel-strong: rgba(255, 255, 255, 0.94);
+    --rev-stroke: rgba(148, 163, 184, 0.22);
+    --rev-shadow: 0 30px 70px rgba(15, 23, 42, 0.08);
   }
 }
 
 @layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
   * {
     @apply border-border;
   }
+
+  *::selection {
+    background: rgba(255, 123, 84, 0.2);
+  }
+
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased;
+    background-image:
+      radial-gradient(circle at top left, rgba(255, 188, 120, 0.16), transparent 28%),
+      radial-gradient(circle at 80% 0%, rgba(19, 186, 166, 0.14), transparent 24%),
+      linear-gradient(180deg, #fffdf8 0%, #f5f7fb 44%, #f2f5fa 100%);
+    min-height: 100vh;
+  }
+
+  a,
+  button,
+  input,
+  textarea,
+  select {
+    transition:
+      background-color 180ms ease,
+      border-color 180ms ease,
+      color 180ms ease,
+      box-shadow 180ms ease,
+      transform 180ms ease,
+      opacity 180ms ease;
+  }
+
+  ::-webkit-scrollbar {
+    width: 12px;
+    height: 12px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: rgba(15, 23, 42, 0.04);
+  }
+
+  ::-webkit-scrollbar-thumb {
+    border: 3px solid transparent;
+    border-radius: 999px;
+    background-clip: padding-box;
+    background-color: rgba(148, 163, 184, 0.68);
+  }
+}
+
+@layer components {
+  .rev-panel {
+    border: 1px solid var(--rev-stroke);
+    background: var(--rev-panel);
+    backdrop-filter: blur(18px);
+    box-shadow: var(--rev-shadow);
+    border-radius: 1.75rem;
+  }
+
+  .rev-panel-strong {
+    border: 1px solid rgba(15, 23, 42, 0.08);
+    background: var(--rev-panel-strong);
+    backdrop-filter: blur(18px);
+    box-shadow: 0 24px 60px rgba(15, 23, 42, 0.1);
+    border-radius: 1.75rem;
+  }
+
+  .rev-kicker {
+    color: rgba(15, 23, 42, 0.55);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+  }
+
+  .rev-input {
+    @apply w-full rounded-2xl border border-slate-200/80 bg-white/80 px-4 py-3 text-sm text-slate-900 shadow-sm outline-none;
+  }
+
+  .rev-input:focus {
+    border-color: rgba(255, 123, 84, 0.7);
+    box-shadow: 0 0 0 4px rgba(255, 123, 84, 0.16);
+  }
+
+  .rev-button-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-2xl px-5 py-3 text-sm font-semibold text-white;
+    background: linear-gradient(135deg, var(--rev-primary), var(--rev-primary-strong));
+    box-shadow: 0 18px 30px rgba(243, 92, 49, 0.25);
+  }
+
+  .rev-button-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 22px 36px rgba(243, 92, 49, 0.3);
+  }
+
+  .rev-button-secondary {
+    @apply inline-flex items-center justify-center gap-2 rounded-2xl border px-5 py-3 text-sm font-semibold text-slate-700;
+    border-color: rgba(148, 163, 184, 0.28);
+    background: rgba(255, 255, 255, 0.72);
+  }
+
+  .rev-button-secondary:hover {
+    border-color: rgba(255, 123, 84, 0.35);
+    color: var(--rev-ink);
+    transform: translateY(-1px);
+  }
+
+  .rev-button-danger {
+    @apply inline-flex items-center justify-center gap-2 rounded-2xl px-5 py-3 text-sm font-semibold text-white;
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+  }
+
+  .rev-stat-card {
+    @apply rev-panel p-5;
+  }
+
+  .rev-tag {
+    @apply inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em];
+    background: rgba(255, 123, 84, 0.12);
+    color: var(--rev-primary-strong);
+  }
+
+  .rev-orb {
+    position: absolute;
+    border-radius: 999px;
+    filter: blur(12px);
+    opacity: 0.95;
+    animation: rev-float 12s ease-in-out infinite;
+  }
+
+  .rev-grid {
+    @apply grid gap-5 sm:grid-cols-2 xl:grid-cols-4;
+  }
+
+  .rev-empty {
+    @apply rev-panel px-6 py-8 text-center text-sm text-slate-500;
+  }
+}
+
+@keyframes rev-float {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(0, -14px, 0) scale(1.04);
   }
 }

@@ -1,12 +1,33 @@
 'use client'
 
-import { useSession, signOut } from 'next-auth/react'
+import { signOut, useSession } from 'next-auth/react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
+import {
+  BarChart3,
+  Bot,
+  ChevronRight,
+  LayoutDashboard,
+  Link2,
+  LogOut,
+  MessageCircle,
+  Settings,
+  PlaySquare,
+  Workflow,
+} from 'lucide-react'
 
 interface DashboardLayoutProps {
   children: React.ReactNode
 }
+
+const navigation = [
+  { name: 'Overview', href: '/dashboard', icon: LayoutDashboard },
+  { name: 'Connections', href: '/dashboard/connections', icon: Link2 },
+  { name: 'Content', href: '/dashboard/content', icon: PlaySquare },
+  { name: 'Comments', href: '/dashboard/comments', icon: MessageCircle },
+  { name: 'Reports', href: '/dashboard/reports', icon: BarChart3 },
+  { name: 'Settings', href: '/dashboard/settings', icon: Settings },
+]
 
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const { data: session, status } = useSession()
@@ -14,77 +35,128 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
   if (status === 'loading') {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="rev-panel flex items-center gap-4 px-8 py-6">
+          <div className="h-10 w-10 animate-spin rounded-full border-2 border-slate-200 border-t-[color:var(--rev-primary)]" />
+          <div>
+            <p className="text-sm font-semibold text-slate-900">Preparing workspace</p>
+            <p className="text-sm text-slate-500">Loading your dashboard shell...</p>
+          </div>
+        </div>
       </div>
     )
   }
 
-  const navigation = [
-    { name: 'Overview', href: '/dashboard', current: pathname === '/dashboard' },
-    { name: 'Connections', href: '/dashboard/connections', current: pathname === '/dashboard/connections' },
-    { name: 'Content', href: '/dashboard/content', current: pathname === '/dashboard/content' },
-    { name: 'Comments', href: '/dashboard/comments', current: pathname === '/dashboard/comments' },
-    { name: 'Reports', href: '/dashboard/reports', current: pathname === '/dashboard/reports' },
-    { name: 'Settings', href: '/dashboard/settings', current: pathname === '/dashboard/settings' },
-  ]
-
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Navigation */}
-      <nav className="bg-white shadow-sm border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16">
-            <div className="flex">
-              <div className="flex-shrink-0 flex items-center">
-                <Link href="/dashboard" className="text-xl font-bold text-blue-600">
-                  RevAI
-                </Link>
+    <div className="relative min-h-screen overflow-hidden">
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div className="rev-orb left-[-8rem] top-[-4rem] h-96 w-96 bg-[radial-gradient(circle,_rgba(255,123,84,0.15),_transparent_70%)]" />
+        <div className="rev-orb right-[-8rem] top-[18%] h-[28rem] w-[28rem] bg-[radial-gradient(circle,_rgba(19,186,166,0.15),_transparent_72%)]" />
+      </div>
+
+      <div className="relative mx-auto flex min-h-screen max-w-[1600px] flex-col gap-4 px-4 py-4 sm:px-6 lg:flex-row lg:gap-6 lg:px-8">
+        <aside className="rev-panel-strong flex w-full flex-col justify-between p-4 lg:sticky lg:top-4 lg:min-h-[calc(100vh-2rem)] lg:w-[290px] lg:self-start">
+          <div>
+            <div className="flex items-center gap-3 px-2 py-2">
+              <div className="flex h-12 w-12 items-center justify-center rounded-3xl bg-[linear-gradient(135deg,var(--rev-primary),var(--rev-primary-strong))] text-white shadow-lg shadow-orange-200">
+                <Bot className="h-5 w-5" />
               </div>
-              <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
-                {navigation.map((item) => (
-                  <Link
-                    key={item.name}
-                    href={item.href}
-                    className={`${
-                      item.current
-                        ? 'border-blue-500 text-gray-900'
-                        : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
-                    } inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium`}
-                  >
-                    {item.name}
-                  </Link>
-                ))}
+              <div>
+                <p className="rev-kicker">Automation Console</p>
+                <h1 className="text-xl font-semibold text-slate-950">RevAI</h1>
               </div>
             </div>
-            <div className="hidden sm:ml-6 sm:flex sm:items-center">
-              <div className="ml-3 relative">
-                <div className="flex items-center space-x-4">
-                  <span className="text-sm text-gray-700">
-                    {session?.user?.name || session?.user?.email}
-                  </span>
-                  <button
-                    onClick={() => signOut({ callbackUrl: '/' })}
-                    className="bg-white p-1 rounded-full text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                  >
-                    <span className="sr-only">Sign out</span>
-                    <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                    </svg>
-                  </button>
+
+            <div className="mt-6 rounded-[1.5rem] bg-slate-950 px-4 py-4 text-white">
+              <div className="flex items-center gap-3">
+                <div className="rounded-2xl bg-white/10 p-2">
+                  <Workflow className="h-4 w-4 text-[#ff9f7f]" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold">Pipeline active</p>
+                  <p className="text-xs text-slate-300">Connect, monitor, automate, analyze.</p>
                 </div>
               </div>
             </div>
-          </div>
-        </div>
-      </nav>
 
-      {/* Main content */}
-      <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-        <div className="px-4 py-6 sm:px-0">
-          {children}
+            <nav className="mt-6 grid gap-2">
+              {navigation.map((item) => {
+                const Icon = item.icon
+                const current = pathname === item.href
+
+                return (
+                  <Link
+                    key={item.name}
+                    href={item.href}
+                    className={`group flex items-center justify-between rounded-2xl px-4 py-3 text-sm font-medium ${
+                      current
+                        ? 'bg-[linear-gradient(135deg,rgba(255,123,84,0.16),rgba(255,123,84,0.08))] text-slate-950 shadow-sm'
+                        : 'text-slate-600 hover:bg-white/70 hover:text-slate-950'
+                    }`}
+                  >
+                    <span className="flex items-center gap-3">
+                      <span className={`flex h-10 w-10 items-center justify-center rounded-2xl ${
+                        current ? 'bg-white text-[color:var(--rev-primary-strong)]' : 'bg-slate-900/5 text-slate-500 group-hover:bg-slate-900/8'
+                      }`}>
+                        <Icon className="h-4 w-4" />
+                      </span>
+                      {item.name}
+                    </span>
+                    <ChevronRight className={`h-4 w-4 transition ${current ? 'text-[color:var(--rev-primary-strong)]' : 'text-slate-400 group-hover:translate-x-0.5'}`} />
+                  </Link>
+                )
+              })}
+            </nav>
+          </div>
+
+          <div className="mt-8 rounded-[1.5rem] border border-slate-200/70 bg-white/80 p-4">
+            <div className="flex items-start gap-3">
+              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-slate-950 text-white">
+                <span className="text-sm font-semibold">
+                  {(session?.user?.name || session?.user?.email || 'R').slice(0, 1).toUpperCase()}
+                </span>
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-semibold text-slate-950">{session?.user?.name || 'RevAI User'}</p>
+                <p className="truncate text-sm text-slate-500">{session?.user?.email}</p>
+              </div>
+            </div>
+
+            <button
+              onClick={() => signOut({ callbackUrl: '/' })}
+              className="rev-button-secondary mt-4 w-full"
+            >
+              <LogOut className="h-4 w-4" />
+              Sign out
+            </button>
+          </div>
+        </aside>
+
+        <div className="flex min-w-0 flex-1 flex-col gap-4 lg:gap-6">
+          <div className="rev-panel-strong flex flex-col gap-4 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+            <div>
+              <p className="rev-kicker">Workspace</p>
+              <h2 className="mt-1 text-2xl font-semibold text-slate-950">
+                {navigation.find((item) => item.href === pathname)?.name || 'Dashboard'}
+              </h2>
+              <p className="mt-1 text-sm text-slate-500">
+                Keep the workflow moving from connection setup to AI-powered posting.
+              </p>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="rounded-full border border-slate-200 bg-white/75 px-4 py-2 text-sm text-slate-600">
+                {session?.user?.email}
+              </div>
+              <Link href="/dashboard/settings" className="rev-button-secondary">
+                Tune automation
+              </Link>
+            </div>
+          </div>
+
+          <main className="min-w-0">{children}</main>
         </div>
-      </main>
+      </div>
     </div>
   )
 }

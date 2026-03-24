@@ -1,10 +1,10 @@
 # Development Log
 
-## 📊 Current Status: PHASE 6 IN PROGRESS
+## 📊 Current Status: PHASE 8 UI/UX POLISH IN PROGRESS
 
-**Last Updated**: 2026-03-18
-**Phase**: Phase 6: Airflow Automation (In Progress)
-**Completion**: 90%
+**Last Updated**: 2026-03-24
+**Phase**: Phase 8: UI/UX Polish (In Progress)
+**Completion**: 96%
 
 ---
 
@@ -338,6 +338,57 @@
   - `app/api/content/monitored/route.ts`
   - `app/dashboard/content/page.tsx`
 - **Impact**: Comments fetched by Airflow should now be visible in the UI, manual AI actions use Firestore instead of mocks, and monitored content is always visible below the platform selector on the content page.
+
+### 2026-03-24
+
+- **User Correction / Priority Reset**: The user clarified that the functional issues were already solved on their system and the next agent should not spend time re-solving backend/runtime problems unless a new regression appears.
+- **New Priority**: Focus shifted fully to product polish: stronger visual design, better UX hierarchy, and more presentation-ready screens across the app.
+- **Agent Guidance**:
+  - Treat the product as a working system first and a debugging target second.
+  - Record UI decisions and course corrections in this log so future agents understand why the work moved from infra/backend to polish.
+  - When the user corrects the direction, preserve that correction here explicitly so later agents do not repeat earlier assumptions.
+
+### 2026-03-24 — Full UI/UX redesign pass
+
+- **Approach**:
+  - Established a shared visual language in `app/globals.css` instead of styling each page ad hoc.
+  - Rebuilt the landing/auth/dashboard shell first so every screen inherits stronger spacing, hierarchy, and atmosphere.
+  - Restyled core product pages around the actual workflow: connect → choose content → manage comments → analyze reports → tune settings.
+- **Files Changed**:
+  - `app/globals.css`
+  - `app/layout.tsx`
+  - `components/AuthShell.tsx`
+  - `components/DashboardLayout.tsx`
+  - `app/page.tsx`
+  - `app/auth/login/page.tsx`
+  - `app/auth/register/page.tsx`
+  - `app/dashboard/page.tsx`
+  - `app/dashboard/connections/page.tsx`
+  - `app/dashboard/content/page.tsx`
+  - `app/dashboard/comments/page.tsx`
+  - `app/dashboard/reports/page.tsx`
+  - `app/dashboard/settings/page.tsx`
+- **Design Direction**:
+  - Moved away from generic blue-on-white cards to a warmer, more intentional visual system with layered panels, strong headers, and clearer status hierarchy.
+  - Upgraded the dashboard shell to feel like an application workspace instead of a plain page list.
+  - Reworked auth screens to feel product-grade and presentation-ready.
+  - Kept the product behavior intact while making the UI better explain the pipeline to demo viewers.
+- **Impact**:
+  - The app now communicates workflow state much more clearly.
+  - Screens are more visually distinctive and should feel less like scaffolded defaults.
+  - Future UI work should extend the shared design system instead of reintroducing one-off generic card layouts.
+
+### 2026-03-24 — Dashboard runtime hardening for local service outages
+
+- **Issue Reported**: The redesigned overview page crashed with an unhandled runtime error when local PostgreSQL was not reachable at `localhost:5432`.
+- **Root Cause**: `app/dashboard/page.tsx` used a single `Promise.all(...)` for Prisma and Firestore reads during server render, so one service outage crashed the entire page.
+- **Fix**:
+  - Replaced the all-or-nothing fetch with `Promise.allSettled(...)`.
+  - Added fallback values for stats and recent activity when Postgres or Firestore is temporarily unavailable.
+  - Added a visible warning banner so the user sees service degradation instead of a blank crash screen.
+- **Files Changed**:
+  - `app/dashboard/page.tsx`
+- **Impact**: The dashboard overview now remains usable during local setup issues or stopped services and surfaces a clear warning instead of throwing an unhandled runtime error.
 
 ---
 

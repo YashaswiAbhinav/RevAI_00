@@ -15,7 +15,7 @@ RevAI automates customer engagement on YouTube, Instagram, and Facebook by:
 - **Backend**: Next.js API Routes + Prisma ORM
 - **Databases**: 
   - PostgreSQL (user data, connections, settings)
-  - MongoDB (comments, replies, reports)
+  - Firebase Firestore (comments, replies, reports)
 - **AI**: Google Gemini API
 - **Automation**: Apache Airflow (Docker)
 - **Auth**: NextAuth.js
@@ -77,5 +77,5 @@ If you're an AI agent taking over this project:
 
 ---
 
-**Last Updated**: 2025-03-16
-**Current Phase**: Initial Setup
+**Last Updated**: 2026-03-24
+**Current Phase**: UI/UX Polish on top of a working core product

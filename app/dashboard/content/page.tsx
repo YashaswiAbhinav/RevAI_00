@@ -1,8 +1,10 @@
 'use client'
 
+import Link from 'next/link'
+import { useEffect, useMemo, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { CheckCircle2, Eye, Layers3, PlayCircle, Sparkles } from 'lucide-react'
 
 interface ContentItem {
   id: string
@@ -37,7 +39,7 @@ export default function ContentPage() {
   const [content, setContent] = useState<ContentItem[]>([])
   const [monitoredContent, setMonitoredContent] = useState<MonitoredItem[]>([])
   const [loading, setLoading] = useState(false)
-  const [saving, setSaving] = useState(false)
+  const [savingId, setSavingId] = useState<string | null>(null)
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -48,26 +50,26 @@ export default function ContentPage() {
   useEffect(() => {
     async function fetchMonitoredContent() {
       try {
-        const response = await fetch('/api/content/monitored')
+        const response = await fetch('/api/content/monitored', { cache: 'no-store' })
         if (response.ok) {
           const data = await response.json()
           setMonitoredContent(data.content)
         }
-      } catch (error) {
-        console.error('Failed to fetch monitored content:', error)
+      } catch (fetchError) {
+        console.error('Failed to fetch monitored content:', fetchError)
       }
     }
 
     async function fetchConnections() {
       try {
-        const response = await fetch('/api/connections')
+        const response = await fetch('/api/connections', { cache: 'no-store' })
         if (response.ok) {
           const data = await response.json()
-          const validConnections = data.connections.filter((c: any) => c.status === 'connected')
+          const validConnections = data.connections.filter((connection: { status: string }) => connection.status === 'connected')
           setConnections(validConnections)
         }
-      } catch (error) {
-        console.error('Failed to fetch connections:', error)
+      } catch (fetchError) {
+        console.error('Failed to fetch connections:', fetchError)
       }
     }
 
@@ -84,20 +86,22 @@ export default function ContentPage() {
         fetch(`/api/content?connectionId=${connectionId}`, { cache: 'no-store' }),
         fetch('/api/content/monitored', { cache: 'no-store' }),
       ])
+
       if (contentResponse.ok) {
         const data = await contentResponse.json()
         let items: ContentItem[] = data.content
-        // Sync isMonitored from DB in case API didn't return it correctly
+
         if (monitoredResponse.ok) {
           const monitoredData = await monitoredResponse.json()
-          const monitoredIds = new Set((monitoredData.content as MonitoredItem[]).map(m => m.platformContentId))
-          items = items.map(c => ({ ...c, isMonitored: monitoredIds.has(c.id) }))
+          const monitoredIds = new Set((monitoredData.content as MonitoredItem[]).map((item) => item.platformContentId))
+          items = items.map((item) => ({ ...item, isMonitored: monitoredIds.has(item.id) }))
           setMonitoredContent(monitoredData.content)
         }
+
         setContent(items)
       }
-    } catch (error) {
-      console.error('Failed to fetch content:', error)
+    } catch (fetchError) {
+      console.error('Failed to fetch content:', fetchError)
     } finally {
       setLoading(false)
     }
@@ -119,21 +123,20 @@ export default function ContentPage() {
         const data = await response.json()
         const monitored: MonitoredItem[] = data.content
         setMonitoredContent(monitored)
-        // Sync isMonitored flag on the visible content list from DB truth
-        const monitoredIds = new Set(monitored.map((m) => m.platformContentId))
-        setContent(prev => prev.map(c => ({ ...c, isMonitored: monitoredIds.has(c.id) })))
+        const monitoredIds = new Set(monitored.map((item) => item.platformContentId))
+        setContent((previous) => previous.map((item) => ({ ...item, isMonitored: monitoredIds.has(item.id) })))
       }
-    } catch (error) {
-      console.error('Failed to refresh monitored content:', error)
+    } catch (refreshError) {
+      console.error('Failed to refresh monitored content:', refreshError)
     }
   }
 
   const toggleMonitoring = async (item: ContentItem) => {
-    setSaving(true)
-    // Optimistic update
-    setContent(prev => prev.map(c =>
-      c.id === item.id ? { ...c, isMonitored: !item.isMonitored } : c
+    setSavingId(item.id)
+    setContent((previous) => previous.map((current) =>
+      current.id === item.id ? { ...current, isMonitored: !item.isMonitored } : current
     ))
+
     try {
       const response = await fetch('/api/content/monitor', {
         method: 'POST',
@@ -149,187 +152,262 @@ export default function ContentPage() {
       if (response.ok) {
         await refreshMonitoredContent()
       } else {
-        // Revert optimistic update on failure
-        setContent(prev => prev.map(c =>
-          c.id === item.id ? { ...c, isMonitored: item.isMonitored } : c
+        setContent((previous) => previous.map((current) =>
+          current.id === item.id ? { ...current, isMonitored: item.isMonitored } : current
         ))
       }
-    } catch (error) {
-      console.error('Failed to update monitoring:', error)
-      // Revert optimistic update
-      setContent(prev => prev.map(c =>
-        c.id === item.id ? { ...c, isMonitored: item.isMonitored } : c
+    } catch (toggleError) {
+      console.error('Failed to update monitoring:', toggleError)
+      setContent((previous) => previous.map((current) =>
+        current.id === item.id ? { ...current, isMonitored: item.isMonitored } : current
       ))
     } finally {
-      setSaving(false)
+      setSavingId(null)
     }
   }
 
+  const selectedConnectionName = useMemo(
+    () => connections.find((connection) => connection.id === selectedConnection)?.channelName || '',
+    [connections, selectedConnection]
+  )
+
   if (status === 'loading') {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
+      <div className="flex h-64 items-center justify-center">
+        <div className="rev-panel flex items-center gap-4 px-8 py-6">
+          <div className="h-10 w-10 animate-spin rounded-full border-2 border-slate-200 border-t-[color:var(--rev-primary)]" />
+          <div>
+            <p className="text-sm font-semibold text-slate-900">Loading content workspace</p>
+            <p className="text-sm text-slate-500">Preparing your monitored content list...</p>
+          </div>
+        </div>
       </div>
     )
   }
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Content Selection</h1>
-        <p className="mt-1 text-sm text-gray-600">
-          Choose which videos and posts you want to monitor for comments.
-        </p>
-      </div>
-
-      {/* Connection Selector */}
-      <div className="bg-white shadow rounded-lg p-6">
-        <label htmlFor="connection" className="block text-sm font-medium text-gray-700 mb-2">
-          Select Platform Connection
-        </label>
-        <select
-          id="connection"
-          value={selectedConnection}
-          onChange={(e) => handleConnectionChange(e.target.value)}
-          className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
-        >
-          <option value="">Choose a connection...</option>
-          {connections.map((connection) => (
-            <option key={connection.id} value={connection.id}>
-              {connection.platform} - {connection.channelName}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      <div className="bg-white shadow rounded-lg p-6">
-        <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
-          Currently Monitored Content
-        </h3>
-
-        {monitoredContent.length === 0 ? (
-          <p className="text-sm text-gray-500">
-            No content is currently being monitored.
-          </p>
-        ) : (
-          <div className="space-y-3">
-            {monitoredContent.map((item) => (
-              <div
-                key={item.id}
-                className="flex items-center justify-between rounded-lg border border-gray-200 px-4 py-3"
-              >
-                <div>
-                  <p className="text-sm font-medium text-gray-900">
-                    {item.title || item.platformContentId}
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    {item.platform.charAt(0).toUpperCase() + item.platform.slice(1).toLowerCase()} • {item.platformContentId}
-                  </p>
-                </div>
-                <span className="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-medium text-green-800">
-                  Monitored
-                </span>
-              </div>
-            ))}
+      <section className="rev-panel-strong px-6 py-8 sm:px-8">
+        <div className="grid gap-6 lg:grid-cols-[1.08fr_0.92fr]">
+          <div>
+            <p className="rev-kicker">Monitoring Scope</p>
+            <h1 className="mt-3 text-4xl font-semibold tracking-tight text-slate-950">Choose the exact content RevAI should watch.</h1>
+            <p className="mt-4 max-w-2xl text-base leading-8 text-slate-600">
+              This screen defines the comment surface for the whole automation pipeline. The cleaner this list is, the easier it is to demo meaningful monitoring, reply generation, and reporting.
+            </p>
           </div>
-        )}
-      </div>
 
-      {/* Content List */}
-      {selectedConnection && (
-        <div className="bg-white shadow rounded-lg">
-          <div className="px-4 py-5 sm:p-6">
-            <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
-              Available Content
-            </h3>
+          <div className="grid gap-4 sm:grid-cols-3">
+            <div className="rev-stat-card">
+              <p className="text-sm text-slate-500">Connected sources</p>
+              <p className="mt-3 text-4xl font-semibold text-slate-950">{connections.length}</p>
+              <p className="mt-3 text-sm text-slate-500">Platforms currently available for content fetch.</p>
+            </div>
+            <div className="rev-stat-card">
+              <p className="text-sm text-slate-500">Monitored items</p>
+              <p className="mt-3 text-4xl font-semibold text-slate-950">{monitoredContent.length}</p>
+              <p className="mt-3 text-sm text-slate-500">Assets actively feeding the comment pipeline.</p>
+            </div>
+            <div className="rev-stat-card">
+              <p className="text-sm text-slate-500">Active selection</p>
+              <p className="mt-3 text-xl font-semibold text-slate-950">{selectedConnectionName || 'None'}</p>
+              <p className="mt-3 text-sm text-slate-500">The source currently loaded in the browser.</p>
+            </div>
+          </div>
+        </div>
+      </section>
 
-            {loading ? (
-              <div className="flex items-center justify-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                <span className="ml-2 text-sm text-gray-600">Loading content...</span>
-              </div>
-            ) : content.length === 0 ? (
-              <p className="text-gray-500 text-center py-8">
-                No content found for this connection.
+      {connections.length === 0 ? (
+        <div className="rev-panel px-6 py-8">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="rev-kicker">No Connected Sources</p>
+              <h2 className="mt-2 text-2xl font-semibold text-slate-950">You need at least one platform connection first.</h2>
+              <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-600">
+                Connect YouTube or Instagram before selecting content to monitor. Once connected, the selector below will populate automatically.
               </p>
-            ) : (
-              <div className="space-y-4">
-                {content.map((item) => (
-                  <div key={item.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-                    <div className="flex items-center space-x-4">
-                      {item.thumbnailUrl && (
-                        <img
-                          src={item.thumbnailUrl}
-                          alt={item.title}
-                          className="w-16 h-16 object-cover rounded"
-                        />
-                      )}
-                      <div className="flex-1 min-w-0">
-                        <h4 className="text-sm font-medium text-gray-900 truncate">
-                          {item.title}
-                        </h4>
-                        <p className="text-sm text-gray-500 truncate">
-                          {item.description}
-                        </p>
-                        <p className="text-xs text-gray-400">
-                          {new Date(item.publishedAt).toLocaleDateString()}
+            </div>
+            <Link href="/dashboard/connections" className="rev-button-primary">
+              Connect platforms
+            </Link>
+          </div>
+        </div>
+      ) : (
+        <section className="grid gap-6 xl:grid-cols-[0.8fr_1.2fr]">
+          <div className="space-y-6">
+            <div className="rev-panel p-6">
+              <p className="rev-kicker">Source Selector</p>
+              <h2 className="mt-2 text-2xl font-semibold text-slate-950">Pick a connected account</h2>
+              <label htmlFor="connection" className="mt-5 block text-sm font-medium text-slate-700">
+                Platform connection
+              </label>
+              <select
+                id="connection"
+                value={selectedConnection}
+                onChange={(event) => handleConnectionChange(event.target.value)}
+                className="rev-input mt-2"
+              >
+                <option value="">Choose a connection...</option>
+                {connections.map((connection) => (
+                  <option key={connection.id} value={connection.id}>
+                    {connection.platform} - {connection.channelName}
+                  </option>
+                ))}
+              </select>
+              <p className="mt-3 text-sm leading-6 text-slate-500">
+                We fetch available videos or posts from the selected channel and let you toggle monitoring with one click.
+              </p>
+            </div>
+
+            <div className="rev-panel p-6">
+              <div className="flex items-center gap-3">
+                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-slate-950 text-white">
+                  <CheckCircle2 className="h-5 w-5" />
+                </div>
+                <div>
+                  <p className="rev-kicker">Monitored Right Now</p>
+                  <h2 className="mt-1 text-2xl font-semibold text-slate-950">Current watchlist</h2>
+                </div>
+              </div>
+
+              <div className="mt-6 space-y-3">
+                {monitoredContent.length === 0 ? (
+                  <div className="rounded-[1.5rem] border border-dashed border-slate-200 px-5 py-6 text-sm text-slate-500">
+                    No content is currently monitored. Select a source and start watching a few strong demo assets.
+                  </div>
+                ) : monitoredContent.map((item) => (
+                  <div key={item.id} className="rounded-[1.5rem] border border-slate-200/70 bg-white/80 px-4 py-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-semibold text-slate-900">{item.title || item.platformContentId}</p>
+                        <p className="mt-1 text-sm text-slate-500">
+                          {item.platform.charAt(0).toUpperCase() + item.platform.slice(1).toLowerCase()} • {new Date(item.updatedAt).toLocaleDateString()}
                         </p>
                       </div>
-                    </div>
-
-                    <div className="flex items-center space-x-4">
-                      <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                        item.isMonitored
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-gray-100 text-gray-800'
-                      }`}>
-                        {item.isMonitored ? 'Monitored' : 'Not Monitored'}
+                      <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-emerald-700">
+                        Live
                       </span>
-
-                      <button
-                        onClick={() => toggleMonitoring(item)}
-                        disabled={saving}
-                        className={`px-4 py-2 text-sm font-medium rounded-md ${
-                          item.isMonitored
-                            ? 'bg-red-600 text-white hover:bg-red-700'
-                            : 'bg-blue-600 text-white hover:bg-blue-700'
-                        } disabled:opacity-50 disabled:cursor-not-allowed`}
-                      >
-                        {saving ? 'Saving...' : item.isMonitored ? 'Stop Monitoring' : 'Start Monitoring'}
-                      </button>
                     </div>
                   </div>
                 ))}
               </div>
+            </div>
+          </div>
+
+          <div className="rev-panel p-6">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="rev-kicker">Available Assets</p>
+                <h2 className="mt-2 text-2xl font-semibold text-slate-950">
+                  {selectedConnectionName ? `${selectedConnectionName} content library` : 'Select a source to load content'}
+                </h2>
+              </div>
+              {selectedConnection && (
+                <div className="rounded-full border border-slate-200 bg-white/80 px-4 py-2 text-sm text-slate-600">
+                  {content.filter((item) => item.isMonitored).length} monitored in this source
+                </div>
+              )}
+            </div>
+
+            {!selectedConnection ? (
+              <div className="mt-6 rounded-[1.5rem] border border-dashed border-slate-200 px-5 py-10 text-center text-sm text-slate-500">
+                Pick a connected platform to browse videos or posts available for monitoring.
+              </div>
+            ) : loading ? (
+              <div className="mt-6 flex items-center justify-center py-14">
+                <div className="flex items-center gap-4 rounded-[1.5rem] border border-slate-200 bg-white/70 px-6 py-4">
+                  <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-200 border-t-[color:var(--rev-primary)]" />
+                  <span className="text-sm text-slate-600">Loading content from the selected source...</span>
+                </div>
+              </div>
+            ) : content.length === 0 ? (
+              <div className="mt-6 rounded-[1.5rem] border border-dashed border-slate-200 px-5 py-10 text-center text-sm text-slate-500">
+                No content was returned for this connection yet.
+              </div>
+            ) : (
+              <div className="mt-6 grid gap-4">
+                {content.map((item) => (
+                  <article key={item.id} className="rounded-[1.75rem] border border-slate-200/70 bg-white/78 p-4 shadow-sm">
+                    <div className="flex flex-col gap-4 lg:flex-row lg:items-center">
+                      <div className="flex min-w-0 flex-1 items-start gap-4">
+                        {item.thumbnailUrl ? (
+                          <img
+                            src={item.thumbnailUrl}
+                            alt={item.title}
+                            className="h-24 w-32 rounded-2xl object-cover shadow-sm"
+                          />
+                        ) : (
+                          <div className="flex h-24 w-32 items-center justify-center rounded-2xl bg-slate-950 text-white">
+                            <PlayCircle className="h-8 w-8" />
+                          </div>
+                        )}
+
+                        <div className="min-w-0 flex-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="rounded-full bg-slate-950 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-white">
+                              {item.platform}
+                            </span>
+                            <span className={`rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] ${
+                              item.isMonitored
+                                ? 'bg-emerald-50 text-emerald-700'
+                                : 'bg-slate-100 text-slate-600'
+                            }`}>
+                              {item.isMonitored ? 'Monitored' : 'Available'}
+                            </span>
+                          </div>
+                          <h3 className="mt-3 text-lg font-semibold text-slate-950">{item.title}</h3>
+                          {item.description && (
+                            <p className="mt-2 line-clamp-2 text-sm leading-7 text-slate-600">{item.description}</p>
+                          )}
+                          <div className="mt-3 flex flex-wrap items-center gap-3 text-sm text-slate-500">
+                            <span className="inline-flex items-center gap-2">
+                              <Eye className="h-4 w-4" />
+                              {new Date(item.publishedAt).toLocaleDateString()}
+                            </span>
+                            <span className="inline-flex items-center gap-2">
+                              <Layers3 className="h-4 w-4" />
+                              ID: {item.id}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex w-full flex-col gap-3 lg:w-auto lg:min-w-[220px]">
+                        <button
+                          onClick={() => toggleMonitoring(item)}
+                          disabled={savingId === item.id}
+                          className={`w-full rounded-2xl px-5 py-3 text-sm font-semibold text-white ${
+                            item.isMonitored
+                              ? 'bg-gradient-to-r from-rose-500 to-red-500'
+                              : 'bg-gradient-to-r from-[color:var(--rev-primary)] to-[color:var(--rev-primary-strong)]'
+                          } disabled:cursor-not-allowed disabled:opacity-60`}
+                        >
+                          {savingId === item.id
+                            ? 'Saving...'
+                            : item.isMonitored
+                            ? 'Stop monitoring'
+                            : 'Start monitoring'}
+                        </button>
+
+                        <div className="rounded-2xl bg-slate-950/4 px-4 py-3 text-sm text-slate-600">
+                          {item.isMonitored
+                            ? 'This asset is feeding comments into the automation pipeline.'
+                            : 'Enable monitoring to include this asset in comment fetch runs.'}
+                        </div>
+                      </div>
+                    </div>
+                  </article>
+                ))}
+              </div>
             )}
           </div>
-        </div>
+        </section>
       )}
 
-      {connections.length === 0 && (
-        <div className="bg-yellow-50 border border-yellow-200 rounded-md p-4">
-          <div className="flex">
-            <div className="flex-shrink-0">
-              <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-              </svg>
-            </div>
-            <div className="ml-3">
-              <h3 className="text-sm font-medium text-yellow-800">
-                No connections available
-              </h3>
-              <div className="mt-2 text-sm text-yellow-700">
-                <p>
-                  You need to connect at least one social media account before you can select content to monitor.
-                  <a href="/dashboard/connections" className="font-medium underline text-yellow-700 hover:text-yellow-600">
-                    Go to connections →
-                  </a>
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      <div className="rev-panel flex items-center gap-3 px-5 py-4 text-sm text-slate-600">
+        <Sparkles className="h-4 w-4 text-[color:var(--rev-primary)]" />
+        Pick a few representative posts or videos for the demo rather than monitoring everything. It makes the comments and reports screens feel much sharper.
+      </div>
     </div>
   )
 }

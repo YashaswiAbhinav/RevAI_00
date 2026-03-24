@@ -88,17 +88,17 @@ Check `07-DEVELOPMENT-LOG.md` for real-time status.
 
 **As of last update**:
 
-- [ ] Database schema defined (not pushed to DB yet)
-- [ ] Project structure planned
-- [ ] No code written yet
+- [x] Full Next.js application exists and core flows are implemented
+- [x] Authentication, platform connections, content selection, comments, reports, and settings screens are present
+- [x] Current priority has moved to polish, UI/UX quality, and presentation readiness unless the user reports a fresh regression
 
 **What you'll likely need to do**:
 
-1. Implement remaining API endpoints
-2. Build UI components
-3. Setup Airflow DAGs
-4. Connect everything together
-5. Test end-to-end
+1. Read the latest entries in `07-DEVELOPMENT-LOG.md` before making assumptions
+2. Preserve and extend the shared UI system instead of adding generic one-off styles
+3. Update logs whenever product direction changes, especially if the user corrects earlier assumptions
+4. Treat backend debugging as secondary unless the user explicitly reports a new issue
+5. Test end-to-end after visual changes so polish work does not break working flows
 
 ---
 
