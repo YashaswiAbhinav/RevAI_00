@@ -54,6 +54,7 @@ cp .env.example .env.local
 **Required for full functionality:**
 
 - `GOOGLE_CLIENT_ID` & `GOOGLE_CLIENT_SECRET` (YouTube OAuth)
+- `REDDIT_CLIENT_ID`, `REDDIT_CLIENT_SECRET`, `REDDIT_USER_AGENT` (Reddit OAuth)
 - `META_APP_ID` & `META_APP_SECRET` (Instagram/Facebook OAuth)
 - `GEMINI_API_KEY` (AI replies)
 
@@ -62,13 +63,14 @@ cp .env.example .env.local
 #### Option A: Local PostgreSQL (Docker)
 ```bash
 docker run --name revai-postgres \
-  -e POSTGRES_PASSWORD=revai@123 \
+  -e POSTGRES_USER=revai \
+  -e POSTGRES_PASSWORD=revai123 \
   -e POSTGRES_DB=revai \
   -p 5432:5432 \
   -d postgres:14
 
 # Update .env.local
-# DATABASE_URL="postgresql://postgres:yourpassword@localhost:5432/revai"
+# DATABASE_URL="postgresql://revai:revai123@localhost:5432/revai"
 ```
 
 #### Option B: Cloud PostgreSQL (Recommended)
@@ -150,6 +152,15 @@ Open http://localhost:3000
 
 You should see the landing page!
 
+### Step 6.5: Connect Supported Demo Platforms
+
+For the current demo path, prioritize:
+
+1. YouTube
+2. Reddit
+
+Instagram setup is still available in the repo, but it is optional if Meta developer account configuration is blocking progress.
+
 ### Step 7: Setup Airflow (Optional for initial testing)
 ```bash
 # Start Airflow services
@@ -230,6 +241,12 @@ npm install
 - Check `DATABASE_URL` in `.env.local`
 - Ensure PostgreSQL is running
 - Try: `npx prisma db push` again
+
+**"Reddit OAuth fails"**
+
+- Check `REDDIT_CLIENT_ID`, `REDDIT_CLIENT_SECRET`, and `REDDIT_USER_AGENT`
+- Verify the redirect URI matches `http://localhost:3000/api/connections/reddit/callback`
+- Make sure the Reddit app type is configured as a web app
 
 **"Prisma Client not found"**
 ```bash

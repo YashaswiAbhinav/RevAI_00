@@ -16,7 +16,7 @@ import psycopg2
 from psycopg2.extras import RealDictCursor
 import requests
 from Crypto.Cipher import AES
-from Crypto.Util.Padding import unpad
+from Crypto.Util.Padding import pad, unpad
 
 logger = logging.getLogger(__name__)
 
@@ -121,10 +121,10 @@ def _evp_bytes_to_key(password: bytes, salt: bytes, key_length: int, iv_length: 
 # ===========================================
 
 def get_monitored_content(platform: str = None) -> List[Dict[str, Any]]:
-    """Get monitored content for a platform (youtube or instagram)
+    """Get monitored content for a platform (youtube, reddit, or instagram)
     
     Args:
-        platform: 'youtube' or 'instagram' or None for all
+        platform: 'youtube', 'reddit', 'instagram', or None for all
     
     Returns:
         List of monitored content with userId and platformContentId
@@ -331,31 +331,109 @@ def update_comment_status(doc_ref, status: str, extra_data: Dict[str, Any] = Non
 # API HELPERS
 # ===========================================
 
+def encrypt_token(token_plain: str) -> str:
+    """Encrypt OAuth token using the same CryptoJS/OpenSSL format as the app."""
+    encryption_key = os.getenv('ENCRYPTION_KEY', '')
+    if not encryption_key:
+        raise ValueError('ENCRYPTION_KEY is not configured')
+
+    salt = os.urandom(8)
+    password = encryption_key.encode('utf-8')
+    key, iv = _evp_bytes_to_key(password, salt, 32, 16)
+    cipher = AES.new(key, AES.MODE_CBC, iv)
+    ciphertext = cipher.encrypt(pad(token_plain.encode('utf-8'), AES.block_size))
+    return base64.b64encode(b'Salted__' + salt + ciphertext).decode('utf-8')
+
+
+def refresh_reddit_access_token(refresh_token: str) -> Dict[str, Any]:
+    """Refresh a Reddit access token using the stored refresh token."""
+    client_id = os.getenv('REDDIT_CLIENT_ID')
+    client_secret = os.getenv('REDDIT_CLIENT_SECRET')
+    user_agent = os.getenv('REDDIT_USER_AGENT', 'revai/1.0')
+
+    if not client_id or not client_secret:
+        raise ValueError('Reddit OAuth credentials are not configured')
+
+    response = requests.post(
+        'https://www.reddit.com/api/v1/access_token',
+        auth=(client_id, client_secret),
+        headers={
+            'User-Agent': user_agent,
+        },
+        data={
+            'grant_type': 'refresh_token',
+            'refresh_token': refresh_token,
+        },
+        timeout=30,
+    )
+    response.raise_for_status()
+    return response.json()
+
+
 def get_decrypted_token(user_id: str, platform: str) -> str:
     """Get and decrypt OAuth token for user on platform"""
+    conn = None
+    cursor = None
+
     try:
         conn = get_revai_db()
         cursor = conn.cursor(cursor_factory=RealDictCursor)
         
         cursor.execute("""
-            SELECT "accessToken" FROM connections
+            SELECT "id", "accessToken", "refreshToken", "expiresAt" FROM connections
             WHERE "userId" = %s AND platform = %s
         """, [user_id, platform.upper()])
         
         result = cursor.fetchone()
         cursor.close()
-        conn.close()
+        cursor = None
         
         if not result:
             raise ValueError(f"No {platform} connection for user {user_id}")
         
-        token_encrypted = result['accessToken']
-        token = decrypt_token(token_encrypted)
+        token = decrypt_token(result['accessToken'])
+
+        if platform.lower() == 'reddit':
+            expires_at = result.get('expiresAt')
+            refresh_token_encrypted = result.get('refreshToken')
+            should_refresh = (
+                expires_at is not None and
+                expires_at <= datetime.now() + timedelta(minutes=5)
+            )
+
+            if should_refresh:
+                if not refresh_token_encrypted:
+                    raise ValueError(f"Reddit refresh token missing for user {user_id}")
+
+                refresh_token = decrypt_token(refresh_token_encrypted)
+                refreshed = refresh_reddit_access_token(refresh_token)
+                token = refreshed['access_token']
+                new_expires_at = datetime.now() + timedelta(seconds=int(refreshed.get('expires_in', 3600)))
+
+                cursor = conn.cursor()
+                cursor.execute("""
+                    UPDATE connections
+                    SET "accessToken" = %s, "expiresAt" = %s, "updatedAt" = %s
+                    WHERE id = %s
+                """, [
+                    encrypt_token(token),
+                    new_expires_at,
+                    datetime.now(),
+                    result['id'],
+                ])
+                conn.commit()
+                cursor.close()
+                cursor = None
         
         return token
     except Exception as e:
         logger.error(f"Failed to get decrypted token: {e}")
         raise
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
 
 
 def save_comment_to_firestore(user_id: str, comment_data: Dict[str, Any]):
@@ -454,6 +532,55 @@ def fetch_instagram_comments(access_token: str, media_id: str) -> List[Dict[str,
     ]
 
 
+def fetch_reddit_comments(access_token: str, post_id: str) -> List[Dict[str, Any]]:
+    """Fetch Reddit comments for a submission."""
+    response = requests.get(
+        f'https://oauth.reddit.com/comments/{post_id}',
+        headers={
+            'Authorization': f'Bearer {access_token}',
+            'User-Agent': os.getenv('REDDIT_USER_AGENT', 'revai/1.0'),
+        },
+        params={
+            'limit': 100,
+            'sort': 'new',
+            'raw_json': 1,
+        },
+        timeout=30,
+    )
+    response.raise_for_status()
+
+    payload = response.json()
+    comment_listing = payload[1] if isinstance(payload, list) and len(payload) > 1 else {}
+    comments: List[Dict[str, Any]] = []
+
+    def walk(children: List[Dict[str, Any]]):
+        for child in children:
+            if child.get('kind') != 't1':
+                continue
+
+            data = child.get('data', {})
+            if not data.get('name') or not isinstance(data.get('body'), str):
+                continue
+
+            comments.append({
+                'id': data.get('name'),
+                'text': data.get('body', ''),
+                'author': {
+                    'name': data.get('author', 'Unknown'),
+                    'profileUrl': f"https://www.reddit.com/user/{data.get('author')}" if data.get('author') else None,
+                },
+                'publishedAt': datetime.utcfromtimestamp(data.get('created_utc', 0)).isoformat() + 'Z',
+            })
+
+            replies = data.get('replies', {})
+            reply_children = replies.get('data', {}).get('children', []) if isinstance(replies, dict) else []
+            if reply_children:
+                walk(reply_children)
+
+    walk(comment_listing.get('data', {}).get('children', []))
+    return comments
+
+
 def post_youtube_reply(access_token: str, parent_id: str, text: str) -> Dict[str, Any]:
     """Post a real reply to a YouTube comment."""
     response = requests.post(
@@ -487,6 +614,33 @@ def post_instagram_reply(access_token: str, comment_id: str, text: str) -> Dict[
     )
     response.raise_for_status()
     return response.json()
+
+
+def post_reddit_reply(access_token: str, thing_id: str, text: str) -> Dict[str, Any]:
+    """Post a real reply to a Reddit comment."""
+    response = requests.post(
+        'https://oauth.reddit.com/api/comment',
+        headers={
+            'Authorization': f'Bearer {access_token}',
+            'User-Agent': os.getenv('REDDIT_USER_AGENT', 'revai/1.0'),
+        },
+        data={
+          'api_type': 'json',
+          'thing_id': thing_id,
+          'text': text,
+        },
+        timeout=30,
+    )
+    response.raise_for_status()
+    payload = response.json()
+    errors = payload.get('json', {}).get('errors', [])
+    if errors:
+        raise ValueError(f"Reddit reply failed: {errors}")
+    created = payload.get('json', {}).get('data', {}).get('things', [{}])[0].get('data', {})
+    return {
+        'id': created.get('name', thing_id),
+        'text': created.get('body', text),
+    }
 
 
 def classify_comment_with_gemini(comment_text: str) -> Dict[str, Any]:

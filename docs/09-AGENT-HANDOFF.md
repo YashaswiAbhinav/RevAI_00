@@ -35,7 +35,7 @@ After reading those three, you'll understand:
 
 - Must use Apache Airflow (already told professors)
 - Must use Gemini API (not local LLM - time constraint)
-- Must support YouTube + Instagram
+- Must support at least two working platforms for demo reliability
 - Must be production-quality architecture (even if demo data)
 
 ---
@@ -90,7 +90,8 @@ Check `07-DEVELOPMENT-LOG.md` for real-time status.
 
 - [x] Full Next.js application exists and core flows are implemented
 - [x] Authentication, platform connections, content selection, comments, reports, and settings screens are present
-- [x] Current priority has moved to polish, UI/UX quality, and presentation readiness unless the user reports a fresh regression
+- [x] Current priority has moved to polish, UI/UX quality, presentation readiness, and maintaining YouTube + Reddit as the safest active demo path unless the user reports a fresh regression
+- [x] Current codebase now passes `npm run type-check` and `npm run build` after the Reddit integration hardening pass
 
 **What you'll likely need to do**:
 

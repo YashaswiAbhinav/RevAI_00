@@ -28,9 +28,9 @@
               │  (Automation)    │
               └────────┬─────────┘
                        │
-         ┌─────────────┼─────────────┐
-         ▼             ▼             ▼
-    [YouTube]    [Instagram]    [Gemini AI]
+         ┌───────────┬───────────┬───────────┐
+         ▼           ▼           ▼           ▼
+    [YouTube]    [Reddit]   [Instagram]  [Gemini AI]
 ```
 
 ## 🔄 Data Flow
@@ -38,10 +38,10 @@
 ### User Registration & Platform Connection
 
 1. User signs up → NextAuth.js → PostgreSQL (Prisma)
-2. User clicks "Connect YouTube" → OAuth flow → Get tokens
+2. User clicks "Connect YouTube" or "Connect Reddit" → OAuth flow → Get tokens
 3. Tokens encrypted (AES-256) → Stored in PostgreSQL
-4. System fetches user's videos → Display with checkboxes
-5. User selects videos → Marked as "monitored" in PostgreSQL
+4. System fetches user's videos/posts/submissions → Display with checkboxes
+5. User selects assets → Marked as "monitored" in PostgreSQL
 
 ### Automated Comment Processing (Airflow)
 

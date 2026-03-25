@@ -51,6 +51,7 @@
 
   body {
     @apply bg-background text-foreground antialiased;
+    font-family: "Avenir Next", "Segoe UI", "Helvetica Neue", sans-serif;
     background-image:
       radial-gradient(circle at top left, rgba(255, 188, 120, 0.16), transparent 28%),
       radial-gradient(circle at 80% 0%, rgba(19, 186, 166, 0.14), transparent 24%),

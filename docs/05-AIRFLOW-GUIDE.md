@@ -28,6 +28,7 @@ airflow/
 │   └── post_replies_dag.py         # DAG 3: Post replies
 ├── tasks/
 │   ├── youtube_tasks.py            # YouTube API functions
+│   ├── reddit_tasks.py             # Reddit API functions
 │   ├── instagram_tasks.py          # Instagram API functions
 │   ├── ai_tasks.py                 # Gemini AI functions
 │   └── posting_tasks.py            # Reply posting functions
@@ -45,15 +46,17 @@ airflow/
 
 **Tasks**:
 
-1. `get_monitored_content` - Query PostgreSQL for monitored videos/posts
+1. `get_monitored_content` - Query PostgreSQL for monitored videos/posts/submissions
 2. `fetch_youtube_comments` - Fetch new comments from YouTube API
-3. `fetch_instagram_comments` - Fetch new comments from Instagram API
+3. `fetch_reddit_comments` - Fetch new comments from Reddit API
+4. `fetch_instagram_comments` - Fetch new comments from Instagram API
 4. `save_to_firestore` - Save comments to Firestore with status "pending"
 
 **Task Flow**:
 ```
 get_monitored_content
     ├─> fetch_youtube_comments ─┐
+    ├─> fetch_reddit_comments ──┤
     └─> fetch_instagram_comments─┤
                                   ├─> save_to_firestore
 ```
@@ -175,12 +178,14 @@ def generate_replies_task(**context):
 1. `get_ready_comments` - Query Firestore for status="ready_to_post"
 2. `check_rate_limits` - Verify user hasn't exceeded quota
 3. `post_to_youtube` - Post replies to YouTube
-4. `post_to_instagram` - Post replies to Instagram
+4. `post_to_reddit` - Post replies to Reddit
+5. `post_to_instagram` - Post replies to Instagram
 5. `update_rate_limits` - Increment counters in PostgreSQL
 
 **Task Flow**:
 ```
 get_ready_comments -> check_rate_limits ─┬─> post_to_youtube ─┐
+                                          ├─> post_to_reddit ──┤
                                           └─> post_to_instagram─┤
                                                                  ├─> update_rate_limits
 ```

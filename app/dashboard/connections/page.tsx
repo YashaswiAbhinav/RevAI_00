@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { AlertTriangle, CheckCircle2, Link2, Plug2, ShieldCheck, Youtube, Instagram, Facebook } from 'lucide-react'
+import { AlertTriangle, CheckCircle2, Link2, MessageCircle, Plug2, ShieldCheck, Youtube, Instagram, Facebook } from 'lucide-react'
 
 interface Connection {
   id: string
@@ -23,6 +23,13 @@ const platformMeta = {
     icon: Youtube,
     tone: 'from-red-500 to-orange-500',
     accent: 'bg-red-50 text-red-700 border-red-200',
+  },
+  REDDIT: {
+    label: 'Reddit',
+    description: 'Connect your Reddit account to monitor post discussions and automate replies.',
+    icon: MessageCircle,
+    tone: 'from-orange-500 to-amber-400',
+    accent: 'bg-orange-50 text-orange-700 border-orange-200',
   },
   INSTAGRAM: {
     label: 'Instagram',
@@ -53,6 +60,7 @@ export default function ConnectionsPage() {
 
   const errorMessages: Record<string, string> = {
     oauth_failed: 'Google rejected the YouTube authorization request.',
+    reddit_oauth_failed: 'Reddit rejected the authorization request.',
     missing_params: 'Google returned an incomplete callback. Please try again.',
     user_not_found: 'Your session could not be matched to a local user.',
     token_exchange_failed: 'Google authorization succeeded, but token exchange failed.',
@@ -60,10 +68,13 @@ export default function ConnectionsPage() {
     no_youtube_channel: 'This Google account does not appear to have a YouTube channel available for this app.',
     insufficient_permissions: 'The app received a token, but YouTube permissions were not sufficient.',
     connection_failed: 'YouTube connection failed after the callback. Check the server log for details.',
+    reddit_connection_failed: 'Reddit connection failed after the callback. Check the server log for details.',
   }
 
   const successMessages: Record<string, string> = {
     youtube_connected: 'YouTube connected successfully.',
+    reddit_connected: 'Reddit connected successfully.',
+    instagram_connected: 'Instagram connected successfully.',
   }
 
   useEffect(() => {
@@ -97,7 +108,7 @@ export default function ConnectionsPage() {
     [connections]
   )
 
-  const handleConnect = async (platform: 'youtube' | 'instagram') => {
+  const handleConnect = async (platform: 'youtube' | 'reddit' | 'instagram') => {
     setBusyPlatform(platform.toUpperCase())
     try {
       const response = await fetch(`/api/connections/${platform}/connect`)
@@ -112,7 +123,7 @@ export default function ConnectionsPage() {
     }
   }
 
-  const handleDisconnect = async (platform: 'YOUTUBE' | 'INSTAGRAM') => {
+  const handleDisconnect = async (platform: 'YOUTUBE' | 'REDDIT' | 'INSTAGRAM') => {
     setBusyPlatform(platform)
     try {
       const response = await fetch(`/api/connections/${platform.toLowerCase()}/disconnect`, {
@@ -183,7 +194,7 @@ export default function ConnectionsPage() {
       )}
 
       <section className="grid gap-6 xl:grid-cols-3">
-        {(['YOUTUBE', 'INSTAGRAM', 'FACEBOOK'] as const).map((platformKey) => {
+        {(['YOUTUBE', 'REDDIT', 'INSTAGRAM', 'FACEBOOK'] as const).map((platformKey) => {
           const meta = platformMeta[platformKey]
           const Icon = meta.icon
           const connection = connections.find((item) => item.platform === platformKey)
@@ -263,7 +274,13 @@ export default function ConnectionsPage() {
                     </button>
                   ) : (
                     <button
-                      onClick={() => handleConnect(platformKey === 'YOUTUBE' ? 'youtube' : 'instagram')}
+                      onClick={() => handleConnect(
+                        platformKey === 'YOUTUBE'
+                          ? 'youtube'
+                          : platformKey === 'REDDIT'
+                          ? 'reddit'
+                          : 'instagram'
+                      )}
                       disabled={isBusy}
                       className="rev-button-primary w-full disabled:cursor-not-allowed disabled:opacity-60"
                     >

@@ -403,6 +403,7 @@ export default function CommentsPage() {
               >
                 <option value="">Platform</option>
                 <option value="youtube">YouTube</option>
+                <option value="reddit">Reddit</option>
                 <option value="instagram">Instagram</option>
               </select>
 

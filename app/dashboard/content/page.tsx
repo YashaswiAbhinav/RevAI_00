@@ -224,7 +224,7 @@ export default function ContentPage() {
               <p className="rev-kicker">No Connected Sources</p>
               <h2 className="mt-2 text-2xl font-semibold text-slate-950">You need at least one platform connection first.</h2>
               <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-600">
-                Connect YouTube or Instagram before selecting content to monitor. Once connected, the selector below will populate automatically.
+                Connect YouTube, Reddit, or Instagram before selecting content to monitor. Once connected, the selector below will populate automatically.
               </p>
             </div>
             <Link href="/dashboard/connections" className="rev-button-primary">
@@ -255,7 +255,7 @@ export default function ContentPage() {
                 ))}
               </select>
               <p className="mt-3 text-sm leading-6 text-slate-500">
-                We fetch available videos or posts from the selected channel and let you toggle monitoring with one click.
+                We fetch available videos, posts, or Reddit submissions from the selected source and let you toggle monitoring with one click.
               </p>
             </div>
 
@@ -311,7 +311,7 @@ export default function ContentPage() {
 
             {!selectedConnection ? (
               <div className="mt-6 rounded-[1.5rem] border border-dashed border-slate-200 px-5 py-10 text-center text-sm text-slate-500">
-                Pick a connected platform to browse videos or posts available for monitoring.
+                Pick a connected platform to browse videos, posts, or Reddit threads available for monitoring.
               </div>
             ) : loading ? (
               <div className="mt-6 flex items-center justify-center py-14">
@@ -411,7 +411,7 @@ export default function ContentPage() {
 
       <div className="rev-panel flex items-center gap-3 px-5 py-4 text-sm text-slate-600">
         <Sparkles className="h-4 w-4 text-[color:var(--rev-primary)]" />
-        Pick a few representative posts or videos for the demo rather than monitoring everything. It makes the comments and reports screens feel much sharper.
+        Pick a few representative videos, posts, or Reddit threads for the demo rather than monitoring everything. It makes the comments and reports screens feel much sharper.
       </div>
     </div>
   )

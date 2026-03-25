@@ -86,12 +86,43 @@ state: "random-state-string"
 
 ---
 
+#### GET /api/connections/reddit/connect
+
+**Description**: Initiate Reddit OAuth flow
+
+**Response**: Redirects to Reddit OAuth consent screen
+
+**Query Params**: None
+
+---
+
+#### GET /api/connections/reddit/callback
+
+**Description**: Reddit OAuth callback (handles token exchange)
+
+**Query Params**:
+```
+code: "generated-by-reddit"
+state: "user-id"
+```
+
+**Response**: Redirects to `/dashboard/connections?success=reddit_connected`
+
+**Database Actions**:
+1. Exchange code for access + refresh token
+2. Encrypt tokens with AES-256
+3. Store in PostgreSQL `connections` table
+4. Fetch Reddit account identity
+5. Save username as the connection channel/account identifier
+
+---
+
 #### DELETE /api/connections/[platform]/disconnect
 
 **Description**: Disconnect a platform
 
 **Params**:
-- `platform`: "youtube" | "instagram" | "facebook"
+- `platform`: "youtube" | "reddit" | "instagram" | "facebook"
 
 **Response**:
 ```json
@@ -131,11 +162,11 @@ state: "random-state-string"
 
 #### GET /api/content/fetch
 
-**Description**: Fetch user's videos/posts from connected platform
+**Description**: Fetch user's videos/posts/submissions from connected platform
 
 **Query Params**:
 ```
-platform: "youtube" | "instagram" | "facebook"
+platform: "youtube" | "reddit" | "instagram" | "facebook"
 maxResults: 20 (optional, default: 50)
 ```
 
@@ -158,7 +189,7 @@ maxResults: 20 (optional, default: 50)
 **Process**:
 1. Get user's connection from PostgreSQL
 2. Decrypt access token
-3. Call platform API (YouTube Data API v3)
+3. Call platform API (YouTube, Reddit, or Instagram)
 4. Return content list
 
 ---

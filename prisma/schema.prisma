@@ -110,6 +110,7 @@ model RateLimit {
 
 enum Platform {
   YOUTUBE
+  REDDIT
   INSTAGRAM
   FACEBOOK
 }

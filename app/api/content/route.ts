@@ -5,6 +5,7 @@ import { prisma } from '@/lib/db/postgres'
 import { decryptToken } from '@/lib/security/encryption'
 import { getYouTubeContent } from '@/lib/integrations/youtube'
 import { getInstagramContent } from '@/lib/integrations/instagram'
+import { getRedditContent, getRedditToken } from '@/lib/integrations/reddit'
 
 export async function GET(request: NextRequest) {
   try {
@@ -49,9 +50,6 @@ export async function GET(request: NextRequest) {
     let content: any[] = []
 
     try {
-      // Decrypt the access token
-      const accessToken = decryptToken(connection.accessToken)
-
       if (!connection.channelId) {
         return NextResponse.json(
           { error: 'Connection is missing platform channel/account ID' },
@@ -60,8 +58,13 @@ export async function GET(request: NextRequest) {
       }
 
       if (connection.platform === 'YOUTUBE') {
+        const accessToken = decryptToken(connection.accessToken)
         content = await getYouTubeContent(accessToken, connection.channelId)
+      } else if (connection.platform === 'REDDIT') {
+        const { accessToken } = await getRedditToken(session.user.id)
+        content = await getRedditContent(accessToken, connection.channelId)
       } else if (connection.platform === 'INSTAGRAM') {
+        const accessToken = decryptToken(connection.accessToken)
         content = await getInstagramContent(accessToken, connection.channelId)
       }
 

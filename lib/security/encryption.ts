@@ -13,18 +13,20 @@ if (!is32CharKey && !is64CharHexKey) {
   throw new Error('ENCRYPTION_KEY must be 32 characters or a 64-character hex string')
 }
 
+const REQUIRED_ENCRYPTION_KEY: string = ENCRYPTION_KEY
+
 /**
  * Encrypts a string using AES-256
  */
 export function encrypt(text: string): string {
-  return CryptoJS.AES.encrypt(text, ENCRYPTION_KEY).toString()
+  return CryptoJS.AES.encrypt(text, REQUIRED_ENCRYPTION_KEY).toString()
 }
 
 /**
  * Decrypts a string that was encrypted with AES-256
  */
 export function decrypt(encryptedText: string): string {
-  const bytes = CryptoJS.AES.decrypt(encryptedText, ENCRYPTION_KEY)
+  const bytes = CryptoJS.AES.decrypt(encryptedText, REQUIRED_ENCRYPTION_KEY)
   return bytes.toString(CryptoJS.enc.Utf8)
 }
 

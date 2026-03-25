@@ -133,15 +133,15 @@ export class YouTubeAPI {
         snippet: {
           textDisplay: thread.snippet?.topLevelComment?.snippet?.textDisplay || '',
           authorDisplayName: thread.snippet?.topLevelComment?.snippet?.authorDisplayName || '',
-          authorProfileImageUrl: thread.snippet?.topLevelComment?.snippet?.authorProfileImageUrl,
-          authorChannelUrl: thread.snippet?.topLevelComment?.snippet?.authorChannelUrl,
+          authorProfileImageUrl: thread.snippet?.topLevelComment?.snippet?.authorProfileImageUrl ?? undefined,
+          authorChannelUrl: thread.snippet?.topLevelComment?.snippet?.authorChannelUrl ?? undefined,
           publishedAt: thread.snippet?.topLevelComment?.snippet?.publishedAt || '',
         }
       })) || []
 
       return {
         comments,
-        nextPageToken: response.data.nextPageToken,
+        nextPageToken: response.data.nextPageToken ?? undefined,
       }
     } catch (error: any) {
       // Handle common YouTube API errors

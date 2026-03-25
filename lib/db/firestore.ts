@@ -100,7 +100,7 @@ export class FirestoreService {
 
   // Generic collection operations
   async getCollection(collectionName: string, filters?: any[], limit = 100) {
-    let query = this.db.collection(collectionName)
+    let query: FirebaseFirestore.Query = this.db.collection(collectionName)
 
     if (filters) {
       filters.forEach(filter => {

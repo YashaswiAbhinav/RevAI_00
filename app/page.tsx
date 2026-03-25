@@ -86,7 +86,7 @@ export default function Home() {
                   {
                     icon: MessageSquare,
                     title: 'Collect comment streams',
-                    description: 'Monitor selected YouTube videos and Instagram posts from a single workspace.',
+                    description: 'Monitor selected YouTube videos, Reddit threads, and Instagram posts from a single workspace.',
                   },
                   {
                     icon: Workflow,

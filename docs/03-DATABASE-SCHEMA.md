@@ -34,7 +34,7 @@ This project uses **two databases**:
 **Key Fields**:
 
 - `accessToken`: Encrypted OAuth token (used for API calls)
-- `platform`: Which service (YOUTUBE, INSTAGRAM, FACEBOOK)
+- `platform`: Which service (YOUTUBE, REDDIT, INSTAGRAM, FACEBOOK)
 - `@@unique([userId, platform])`: User can connect each platform only once
 
 ### MonitoredContent Model
@@ -165,6 +165,7 @@ Fields indexed:
     
     byPlatform: {
       youtube: { comments: 200, replied: 150 },
+      reddit: { comments: 62, replied: 41 },
       instagram: { comments: 147, replied: 84 }
     }
   },

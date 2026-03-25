@@ -2,7 +2,7 @@
 
 ## 🎯 What This Project Does
 
-RevAI automates customer engagement on YouTube, Instagram, and Facebook by:
+RevAI automates customer engagement on YouTube, Reddit, and Instagram by:
 
 1. Monitoring comments on user's content
 2. Using AI to generate contextual replies
@@ -78,4 +78,4 @@ If you're an AI agent taking over this project:
 ---
 
 **Last Updated**: 2026-03-24
-**Current Phase**: UI/UX Polish on top of a working core product
+**Current Phase**: UI/UX Polish plus Reddit integration on top of a working core product

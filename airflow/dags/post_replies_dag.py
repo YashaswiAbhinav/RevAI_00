@@ -25,6 +25,7 @@ from tasks.helpers import (
     update_comment_status,
     increment_rate_limit,
     post_youtube_reply,
+    post_reddit_reply,
     post_instagram_reply,
     log_task_start,
     log_task_end
@@ -48,7 +49,7 @@ default_args = {
 dag = DAG(
     'post_replies_dag',
     default_args=default_args,
-    description='Post approved replies to YouTube and Instagram',
+    description='Post approved replies to YouTube, Reddit, and Instagram',
     schedule_interval=_schedule,
     catchup=False,
     tags=['revai', 'comments', 'posting'],
@@ -134,6 +135,82 @@ def task_post_to_youtube(**context):
     except Exception as e:
         logger.error(f"Error in post_to_youtube: {e}")
         log_task_end('post_to_youtube', 'failed')
+        raise
+
+
+# ===========================================
+# TASK: Post to Reddit
+# ===========================================
+
+def task_post_to_reddit(**context):
+    """Post replies to Reddit comments"""
+    log_task_start('post_to_reddit')
+    
+    try:
+        ready_comments = get_ready_to_post_comments('reddit', limit=50)
+        logger.info(f"Found {len(ready_comments)} Reddit comments ready to post")
+        
+        posted_count = 0
+        failed_count = 0
+        
+        for comment in ready_comments:
+            try:
+                user_id = comment['userId']
+                platform_comment_id = comment['platformCommentId']
+                reply_text = comment['generatedReply']['text']
+                
+                rate_limit = get_rate_limit(user_id)
+                if rate_limit['repliesThisHour'] >= 30:
+                    logger.warning(f"User {user_id} hit hourly rate limit, skipping")
+                    continue
+                
+                token = get_decrypted_token(user_id, 'reddit')
+                logger.info(f"Posting reply to Reddit comment {platform_comment_id}")
+                result = post_reddit_reply(token, platform_comment_id, reply_text)
+                
+                update_comment_status(
+                    comment['_doc_ref'],
+                    'replied',
+                    {
+                        'posted': {
+                            'isPosted': True,
+                            'postedAt': datetime.now(),
+                            'platformReplyId': result.get('id'),
+                            'platform': 'reddit'
+                        }
+                    }
+                )
+                
+                increment_rate_limit(user_id, 'reddit')
+                wait_time = random.randint(2, 5)
+                logger.info(f"Waiting {wait_time} seconds before next post...")
+                time.sleep(wait_time)
+                
+                posted_count += 1
+                
+            except Exception as e:
+                logger.error(f"Error posting Reddit reply: {e}")
+                
+                try:
+                    update_comment_status(
+                        comment['_doc_ref'],
+                        'failed',
+                        {'error': str(e), 'platform': 'reddit'}
+                    )
+                except:
+                    pass
+                
+                failed_count += 1
+                continue
+        
+        logger.info(f"Reddit posting results: {posted_count} posted, {failed_count} failed")
+        context['task_instance'].xcom_push(key='reddit_posted', value=posted_count)
+        
+        log_task_end('post_to_reddit', 'success')
+        return posted_count
+    except Exception as e:
+        logger.error(f"Error in post_to_reddit: {e}")
+        log_task_end('post_to_reddit', 'failed')
         raise
 
 
@@ -229,16 +306,22 @@ def task_post_summary(**context):
         task_ids='post_to_youtube',
         key='youtube_posted'
     ) or 0
+
+    reddit_posted = context['task_instance'].xcom_pull(
+        task_ids='post_to_reddit',
+        key='reddit_posted'
+    ) or 0
     
     instagram_posted = context['task_instance'].xcom_pull(
         task_ids='post_to_instagram',
         key='instagram_posted'
     ) or 0
     
-    total = youtube_posted + instagram_posted
+    total = youtube_posted + reddit_posted + instagram_posted
     
     logger.info(f"===== POST SUMMARY =====")
     logger.info(f"YouTube replies posted: {youtube_posted}")
+    logger.info(f"Reddit replies posted: {reddit_posted}")
     logger.info(f"Instagram replies posted: {instagram_posted}")
     logger.info(f"Total posted: {total}")
     logger.info(f"=======================")
@@ -251,6 +334,12 @@ def task_post_summary(**context):
 post_to_youtube_task = PythonOperator(
     task_id='post_to_youtube',
     python_callable=task_post_to_youtube,
+    dag=dag,
+)
+
+post_to_reddit_task = PythonOperator(
+    task_id='post_to_reddit',
+    python_callable=task_post_to_reddit,
     dag=dag,
 )
 
@@ -267,4 +356,4 @@ post_summary_task = PythonOperator(
 )
 
 # Set task dependencies - These can run in parallel
-[post_to_youtube_task, post_to_instagram_task] >> post_summary_task
+[post_to_youtube_task, post_to_reddit_task, post_to_instagram_task] >> post_summary_task

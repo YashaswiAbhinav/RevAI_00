@@ -20,7 +20,7 @@ export async function DELETE(
 
     const platform = params.platform.toUpperCase()
 
-    if (!['YOUTUBE', 'INSTAGRAM', 'FACEBOOK'].includes(platform)) {
+    if (!['YOUTUBE', 'REDDIT', 'INSTAGRAM', 'FACEBOOK'].includes(platform)) {
       return NextResponse.json(
         { error: 'Invalid platform' },
         { status: 400 }

@@ -1,7 +1,7 @@
 // Database model types and utilities
 // These types correspond to the Prisma schema
 
-export type Platform = 'YOUTUBE' | 'INSTAGRAM' | 'FACEBOOK'
+export type Platform = 'YOUTUBE' | 'REDDIT' | 'INSTAGRAM' | 'FACEBOOK'
 
 export interface User {
   id: string
@@ -187,6 +187,15 @@ export interface InstagramComment {
   text: string
   username: string
   timestamp: string
+}
+
+export interface RedditComment {
+  id: string
+  name: string
+  body: string
+  author: string
+  permalink?: string
+  createdAt: string
 }
 
 // Utility types

@@ -166,14 +166,14 @@ export async function GET(request: NextRequest) {
         topConcerns: [],
         recommendations: [],
         summary: 'No comment data found for this time range.',
-        platformStats: { youtube: 0, instagram: 0 },
+        platformStats: { youtube: 0, reddit: 0, instagram: 0 },
         recentActivity: [],
         recentComments: [],
       })
     }
 
     const sentimentCounts = { positive: 0, neutral: 0, negative: 0 }
-    const platformStats = { youtube: 0, instagram: 0 }
+    const platformStats = { youtube: 0, reddit: 0, instagram: 0 }
     const activityMap = new Map<string, { date: string; comments: number; replies: number }>()
     let repliedCount = 0
     let queuedCount = 0
@@ -195,6 +195,8 @@ export async function GET(request: NextRequest) {
 
       if (comment.platform === 'youtube') {
         platformStats.youtube += 1
+      } else if (comment.platform === 'reddit') {
+        platformStats.reddit += 1
       } else if (comment.platform === 'instagram') {
         platformStats.instagram += 1
       }

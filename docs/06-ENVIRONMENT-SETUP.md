@@ -174,7 +174,44 @@ In Google Cloud Console → OAuth consent screen → Edit App:
 
 ---
 
-## 4️⃣ Instagram/Facebook API (Meta)
+## 4️⃣ Reddit API
+
+**Step 1: Create Reddit App**
+
+1. Sign in to Reddit with the account you want to connect
+2. Open `https://www.reddit.com/prefs/apps`
+3. Click "create app" or "create another app"
+4. Set:
+   - Name: `RevAI Reddit`
+   - App type: **web app**
+   - Redirect URI: `http://localhost:3000/api/connections/reddit/callback`
+5. Save the app
+
+**Step 2: Copy Credentials**
+
+From the Reddit app page:
+
+- The string under the app name is the **client ID**
+- The **secret** field is the client secret
+
+Paste into `.env.local`:
+```bash
+REDDIT_CLIENT_ID="your-reddit-client-id"
+REDDIT_CLIENT_SECRET="your-reddit-client-secret"
+REDDIT_USER_AGENT="revai/1.0 by u/your_reddit_username"
+```
+
+**Step 3: OAuth Behavior**
+
+- RevAI requests `identity`, `read`, `submit`, and `history`
+- The app uses permanent duration so a refresh token is issued
+- Access tokens are refreshed automatically when they are near expiry
+
+---
+
+## 5️⃣ Instagram/Facebook API (Meta)
+
+This integration remains available, but it is not required for the current demo path if Meta developer setup is blocking progress.
 
 **Step 1: Create Meta Developer Account**
 
@@ -229,7 +266,7 @@ For development, you need an Instagram **Business** or **Creator** account:
 
 ---
 
-## 5️⃣ Gemini AI API
+## 6️⃣ Gemini AI API
 
 **Step 1: Get API Key**
 

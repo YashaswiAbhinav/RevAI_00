@@ -100,13 +100,13 @@ export default async function DashboardPage() {
     {
       href: '/dashboard/connections',
       title: 'Connect platforms',
-      description: 'Add YouTube or Instagram and verify permissions.',
+      description: 'Add YouTube, Reddit, or Instagram and verify permissions.',
       icon: Link2,
     },
     {
       href: '/dashboard/content',
       title: 'Select content',
-      description: 'Choose the exact videos or posts to monitor.',
+      description: 'Choose the exact videos, posts, or threads to monitor.',
       icon: PlaySquare,
     },
     {

@@ -4,6 +4,7 @@ import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/db/postgres'
 import { youtubeAPI, getYouTubeToken } from '@/lib/integrations/youtube'
 import { instagramAPI, getInstagramToken } from '@/lib/integrations/instagram'
+import { redditAPI, getRedditToken } from '@/lib/integrations/reddit'
 
 export async function GET(request: NextRequest) {
   try {
@@ -32,6 +33,11 @@ export async function GET(request: NextRequest) {
           if (connection.platform === 'YOUTUBE') {
             const { accessToken } = await getYouTubeToken(session.user.id)
             const result = await youtubeAPI.checkPermissions(accessToken)
+            permissions = result
+            errors = result.errors
+          } else if (connection.platform === 'REDDIT') {
+            const { accessToken } = await getRedditToken(session.user.id)
+            const result = await redditAPI.checkPermissions(accessToken, connection.channelId || undefined)
             permissions = result
             errors = result.errors
           } else if (connection.platform === 'INSTAGRAM') {

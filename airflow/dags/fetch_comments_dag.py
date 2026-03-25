@@ -21,6 +21,7 @@ from tasks.helpers import (
     get_decrypted_token,
     save_comment_to_firestore,
     fetch_youtube_comments,
+    fetch_reddit_comments,
     fetch_instagram_comments,
     log_task_start,
     log_task_end
@@ -44,7 +45,7 @@ default_args = {
 dag = DAG(
     'fetch_comments_dag',
     default_args=default_args,
-    description='Fetch comments from monitored YouTube/Instagram content',
+    description='Fetch comments from monitored YouTube/Reddit/Instagram content',
     schedule_interval=_schedule,
     catchup=False,
     tags=['revai', 'comments', 'fetch'],
@@ -56,7 +57,7 @@ dag = DAG(
 # ===========================================
 
 def task_get_monitored_content(**context):
-    """Fetch all monitored YouTube and Instagram content"""
+    """Fetch all monitored YouTube, Reddit, and Instagram content"""
     log_task_start('get_monitored_content')
     
     try:
@@ -129,6 +130,60 @@ def task_fetch_youtube_comments(**context):
 
 
 # ===========================================
+# TASK: Fetch Reddit Comments
+# ===========================================
+
+def task_fetch_reddit_comments(**context):
+    """Fetch comments from Reddit API for monitored submissions"""
+    log_task_start('fetch_reddit_comments')
+    
+    try:
+        monitored = context['task_instance'].xcom_pull(
+            task_ids='get_monitored_content',
+            key='monitored_content'
+        )
+        
+        reddit_content = [c for c in monitored if c['platform'] == 'reddit']
+        logger.info(f"Processing {len(reddit_content)} Reddit submissions")
+        
+        comments_fetched = 0
+        
+        for content in reddit_content:
+            try:
+                user_id = content['userId']
+                post_id = content['platformContentId']
+                
+                token = get_decrypted_token(user_id, 'reddit')
+                comments = fetch_reddit_comments(token, post_id)
+
+                for comment in comments:
+                    save_comment_to_firestore(user_id, {
+                        'id': comment['id'],
+                        'connectionId': content.get('connectionId'),
+                        'platform': 'reddit',
+                        'text': comment['text'],
+                        'author': comment['author'],
+                        'contentId': post_id,
+                        'publishedAt': comment.get('publishedAt'),
+                    })
+                    comments_fetched += 1
+                
+            except Exception as e:
+                logger.error(f"Error fetching comments for Reddit post {post_id}: {e}")
+                continue
+        
+        logger.info(f"Successfully fetched {comments_fetched} Reddit comments")
+        context['task_instance'].xcom_push(key='reddit_comments', value=comments_fetched)
+        
+        log_task_end('fetch_reddit_comments', 'success')
+        return comments_fetched
+    except Exception as e:
+        logger.error(f"Error in fetch_reddit_comments: {e}")
+        log_task_end('fetch_reddit_comments', 'failed')
+        raise
+
+
+# ===========================================
 # TASK: Fetch Instagram Comments
 # ===========================================
 
@@ -192,15 +247,21 @@ def task_fetch_summary(**context):
         task_ids='fetch_youtube_comments',
         key='youtube_comments'
     ) or 0
+
+    reddit_count = context['task_instance'].xcom_pull(
+        task_ids='fetch_reddit_comments',
+        key='reddit_comments'
+    ) or 0
     
     instagram_count = context['task_instance'].xcom_pull(
         task_ids='fetch_instagram_comments',
         key='instagram_comments'
     ) or 0
     
-    total = youtube_count + instagram_count
+    total = youtube_count + reddit_count + instagram_count
     logger.info(f"===== FETCH SUMMARY =====")
     logger.info(f"YouTube comments: {youtube_count}")
+    logger.info(f"Reddit comments: {reddit_count}")
     logger.info(f"Instagram comments: {instagram_count}")
     logger.info(f"Total fetched: {total}")
     logger.info(f"========================")
@@ -222,6 +283,12 @@ fetch_youtube_comments_task = PythonOperator(
     dag=dag,
 )
 
+fetch_reddit_comments_task = PythonOperator(
+    task_id='fetch_reddit_comments',
+    python_callable=task_fetch_reddit_comments,
+    dag=dag,
+)
+
 fetch_instagram_comments_task = PythonOperator(
     task_id='fetch_instagram_comments',
     python_callable=task_fetch_instagram_comments,
@@ -235,4 +302,4 @@ fetch_summary_task = PythonOperator(
 )
 
 # Set task dependencies
-get_monitored_content_task >> [fetch_youtube_comments_task, fetch_instagram_comments_task] >> fetch_summary_task
+get_monitored_content_task >> [fetch_youtube_comments_task, fetch_reddit_comments_task, fetch_instagram_comments_task] >> fetch_summary_task

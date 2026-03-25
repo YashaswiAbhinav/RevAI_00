@@ -35,6 +35,7 @@ interface ReportData {
   summary: string
   platformStats: {
     youtube: number
+    reddit: number
     instagram: number
   }
   recentActivity: Array<{
@@ -64,6 +65,10 @@ function formatPlatform(platform: string) {
 
   if (platform === 'instagram') {
     return 'Instagram'
+  }
+
+  if (platform === 'reddit') {
+    return 'Reddit'
   }
 
   return 'Unknown'
@@ -186,7 +191,10 @@ export default function ReportsPage() {
       return []
     }
 
-    const total = Math.max(reportData.platformStats.youtube + reportData.platformStats.instagram, 1)
+    const total = Math.max(
+      reportData.platformStats.youtube + reportData.platformStats.reddit + reportData.platformStats.instagram,
+      1
+    )
 
     return [
       {
@@ -194,6 +202,12 @@ export default function ReportsPage() {
         value: reportData.platformStats.youtube,
         share: Math.round((reportData.platformStats.youtube / total) * 100),
         tone: 'from-rose-400 to-orange-400',
+      },
+      {
+        label: 'Reddit',
+        value: reportData.platformStats.reddit,
+        share: Math.round((reportData.platformStats.reddit / total) * 100),
+        tone: 'from-orange-400 to-amber-400',
       },
       {
         label: 'Instagram',

@@ -163,6 +163,53 @@
 
 ## 📝 Notes & Decisions
 
+### 2026-03-25 — Reddit integrated as the second active platform workflow
+
+- **User Correction / Product Decision**: Instagram developer account setup is currently blocked, so Instagram should stay in the codebase but should not be the critical demo dependency right now.
+- **Approach**:
+  - Added Reddit as a first-class platform alongside YouTube instead of replacing or hacking around existing integrations.
+  - Kept YouTube untouched and left Instagram available but optional.
+  - Implemented Reddit OAuth, encrypted token storage, refresh-token handling, content selection, report visibility, and Airflow fetch/post automation branches.
+  - Updated setup docs so future agents know the preferred demo path is YouTube + Reddit.
+- **Files Changed**:
+  - `prisma/schema.prisma`
+  - `lib/integrations/reddit.ts`
+  - `app/api/connections/reddit/connect/route.ts`
+  - `app/api/connections/reddit/callback/route.ts`
+  - `app/api/connections/route.ts`
+  - `app/api/content/route.ts`
+  - `app/dashboard/connections/page.tsx`
+  - `app/dashboard/content/page.tsx`
+  - `app/dashboard/comments/page.tsx`
+  - `app/api/reports/route.ts`
+  - `app/dashboard/reports/page.tsx`
+  - `airflow/tasks/helpers.py`
+  - `airflow/dags/fetch_comments_dag.py`
+  - `airflow/dags/post_replies_dag.py`
+  - `.env.example`
+  - `docs/00-README.md`
+  - `docs/01-ARCHITECTURE.md`
+  - `docs/02-SETUP-GUIDE.md`
+  - `docs/03-DATABASE-SCHEMA.md`
+  - `docs/04-API-REFERENCE.md`
+  - `docs/05-AIRFLOW-GUIDE.md`
+  - `docs/06-ENVIRONMENT-SETUP.md`
+  - `docs/09-AGENT-HANDOFF.md`
+- **Impact**: The app now has a practical second workflow path for demo use: YouTube + Reddit. Instagram remains in place but is no longer a blocker for presenting two working platform flows.
+
+### 2026-03-25 — Reddit pass hardened and repo baseline cleaned up
+
+- **Completed**:
+  - Fixed the older TypeScript issues in `lib/db/firestore.ts`, `lib/integrations/youtube.ts`, and `lib/security/encryption.ts`.
+  - Removed the Google-hosted font dependency so production builds do not rely on external font downloads.
+  - Regenerated Prisma client after adding the `REDDIT` enum value.
+  - Verified `npm run type-check` passes cleanly.
+  - Verified `npm run build` completes successfully.
+- **Database Note**:
+  - `npx prisma db push` continued returning an opaque Prisma schema engine error against the local PostgreSQL instance even after the schema was correct.
+  - The live `Platform` enum was updated directly in Postgres with `ALTER TYPE "Platform" ADD VALUE IF NOT EXISTS 'REDDIT' AFTER 'YOUTUBE';` so the Reddit connection flow can persist records in the current environment.
+- **Impact**: Reddit support is no longer just code-complete; it is build-safe, type-safe, and aligned with the current local database.
+
 ### 2026-03-24 — Reports page switched from demo-style view to real data view
 
 - **User Correction**: The reports page still felt like it was showing mock/demo analytics even though the backend data flow existed.
