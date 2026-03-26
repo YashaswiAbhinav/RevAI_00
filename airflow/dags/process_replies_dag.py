@@ -12,9 +12,15 @@ import os
 import sys
 sys.path.insert(0, '/opt/airflow')
 
-# Read interval from Airflow Variable set by the settings page (default 60 min)
-_process_interval = int(Variable.get('revai_process_interval_minutes', default_var=60))
-_schedule = f'*/{_process_interval} * * * *' if _process_interval < 60 else f'0 */{_process_interval // 60} * * *'
+def _load_interval_minutes(variable_name: str, default_minutes: int) -> int:
+    try:
+        return max(5, int(Variable.get(variable_name, default_var=default_minutes)))
+    except (TypeError, ValueError):
+        return default_minutes
+
+
+_process_interval = _load_interval_minutes('revai_process_interval_minutes', 60)
+_schedule = timedelta(minutes=_process_interval)
 
 # Import helper functions
 from tasks.helpers import (
@@ -24,6 +30,9 @@ from tasks.helpers import (
     update_comment_status,
     classify_comment_with_gemini,
     generate_reply_with_gemini,
+    evaluate_reply_action,
+    is_reply_delay_satisfied,
+    is_legacy_fallback_reply,
     log_task_start,
     log_task_end
 )
@@ -121,22 +130,53 @@ def task_generate_replies(**context):
                 
                 # Get user settings for personalization
                 user_settings = get_user_settings(user_id)
-                
                 classification = comment.get('classification', {})
-                reply_text = generate_reply_with_gemini(
+                action = evaluate_reply_action(classification, user_settings)
+
+                if action['status'] == 'rejected':
+                    update_comment_status(
+                        comment['_doc_ref'],
+                        'rejected',
+                        {
+                            'automation': {
+                                'decision': action['reason'],
+                                'processedAt': datetime.now(),
+                            }
+                        }
+                    )
+                    logger.info(f"Rejected comment {comment.get('platformCommentId')}: {action['reason']}")
+                    generated_count += 1
+                    continue
+
+                existing_reply = ((comment.get('generatedReply') or {}).get('text')
+                                  if isinstance(comment.get('generatedReply'), dict) else None)
+                if is_legacy_fallback_reply(existing_reply):
+                    existing_reply = None
+
+                reply_text = existing_reply or generate_reply_with_gemini(
                     comment_text=comment_text,
                     comment_type=classification.get('type', 'general'),
+                    comment_sentiment=classification.get('sentiment', 'neutral'),
                     business_context=user_settings.get('businessContext') or '',
                     tone=user_settings.get('aiTone') or 'friendly',
-                    max_length=300,
+                    max_length=user_settings.get('maxReplyLength') or 300,
                 )
-                
-                logger.info(f"Generated reply for comment {comment.get('platformCommentId')}")
-                
-                # Update comment status in Firestore
+
+                next_status = action['status']
+                decision_reason = action['reason']
+
+                if next_status == 'ready_to_post' and not is_reply_delay_satisfied(
+                    comment,
+                    user_settings.get('replyDelay', 0),
+                ):
+                    next_status = 'classified'
+                    decision_reason = 'awaiting_reply_delay'
+
+                logger.info(f"Generated reply for comment {comment.get('platformCommentId')} with status {next_status}")
+
                 update_comment_status(
                     comment['_doc_ref'],
-                    'ready_to_post',
+                    next_status,
                     {
                         'generatedReply': {
                             'text': reply_text,
@@ -146,6 +186,10 @@ def task_generate_replies(**context):
                                 'tone': user_settings['aiTone'],
                                 'businessContext': user_settings['businessContext']
                             }
+                        },
+                        'automation': {
+                            'decision': decision_reason,
+                            'processedAt': datetime.now(),
                         }
                     }
                 )
@@ -185,7 +229,7 @@ def task_process_summary(**context):
     
     logger.info(f"===== PROCESS SUMMARY =====")
     logger.info(f"Classified comments: {classified_count}")
-    logger.info(f"Generated replies: {generated_count}")
+    logger.info(f"Replies processed: {generated_count}")
     logger.info(f"=========================")
 
 

@@ -4,6 +4,8 @@ import { authOptions } from '@/lib/auth'
 import { firestore } from '@/lib/db/firestore'
 import { processCommentForAutomation } from '@/lib/comments/automation'
 
+export const dynamic = 'force-dynamic'
+
 export async function POST(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
@@ -11,7 +13,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { commentId } = await request.json()
+    const { commentId, feedback, queueAfterGeneration } = await request.json()
 
     if (!commentId) {
       return NextResponse.json({ error: 'Comment ID required' }, { status: 400 })
@@ -28,7 +30,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
     }
 
-    const result = await processCommentForAutomation(comment, session.user.id)
+    const result = await processCommentForAutomation(comment, session.user.id, {
+      allowDraftGeneration: true,
+      queueReply: Boolean(queueAfterGeneration),
+      feedback: typeof feedback === 'string' ? feedback.trim() : '',
+      forceRegeneration: true,
+      bypassDelay: Boolean(queueAfterGeneration),
+    })
 
     await commentRef.update({
       classification: result.classification,
@@ -40,6 +48,7 @@ export async function POST(request: NextRequest) {
       automation: {
         processedAt: new Date(),
         decision: result.reason || null,
+        feedback: typeof feedback === 'string' ? feedback.trim() : null,
       },
       status: result.status,
       updatedAt: new Date(),

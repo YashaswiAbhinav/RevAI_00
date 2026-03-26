@@ -10,6 +10,7 @@ interface Connection {
   platform: string
   channelName: string
   status: string
+  errors?: string[]
   permissions: {
     canReadComments: boolean
     canPostReplies: boolean
@@ -244,6 +245,12 @@ export default function ConnectionsPage() {
                           </span>
                         </div>
                       </div>
+
+                      {connection.errors && connection.errors.length > 0 && (
+                        <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                          {connection.errors[0]}
+                        </div>
+                      )}
                     </div>
                   ) : (
                     <div className="flex h-full flex-col justify-between gap-4">

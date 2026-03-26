@@ -1,5 +1,5 @@
 import { google } from 'googleapis'
-import { decryptToken } from '@/lib/security/encryption'
+import { decryptToken, encryptToken } from '@/lib/security/encryption'
 import { prisma } from '@/lib/db/postgres'
 import type { YouTubeComment } from '@/models'
 
@@ -20,6 +20,8 @@ export class YouTubeAPI {
   getAuthUrl(state?: string): string {
     return this.oauth2Client.generateAuthUrl({
       access_type: 'offline',
+      prompt: 'consent',
+      include_granted_scopes: true,
       scope: [
         'https://www.googleapis.com/auth/youtube.readonly',
         'https://www.googleapis.com/auth/youtube.force-ssl'
@@ -254,13 +256,48 @@ export async function getYouTubeToken(userId: string): Promise<{
     throw new Error('YouTube connection not found')
   }
 
-  const accessToken = decryptToken(connection.accessToken)
+  let accessToken = decryptToken(connection.accessToken)
   const refreshToken = connection.refreshToken ? decryptToken(connection.refreshToken) : undefined
+  let expiresAt = connection.expiresAt || undefined
+
+  const shouldRefresh = Boolean(
+    refreshToken &&
+    expiresAt &&
+    expiresAt.getTime() <= Date.now() + (5 * 60 * 1000)
+  )
+
+  if (shouldRefresh && refreshToken) {
+    const refreshed = await youtubeAPI.refreshAccessToken(refreshToken)
+
+    if (!refreshed.access_token) {
+      throw new Error('YouTube token refresh did not return an access token')
+    }
+
+    accessToken = refreshed.access_token
+    expiresAt = refreshed.expiry_date
+      ? new Date(refreshed.expiry_date)
+      : new Date(Date.now() + (60 * 60 * 1000))
+
+    await prisma.connection.update({
+      where: { id: connection.id },
+      data: {
+        accessToken: encryptToken(accessToken),
+        refreshToken: refreshed.refresh_token
+          ? encryptToken(refreshed.refresh_token)
+          : connection.refreshToken,
+        expiresAt,
+      },
+    })
+  }
+
+  if (expiresAt && expiresAt.getTime() <= Date.now() + (5 * 60 * 1000) && !refreshToken) {
+    throw new Error('YouTube connection expired and cannot refresh automatically. Reconnect YouTube.')
+  }
 
   return {
     accessToken,
     refreshToken,
-    expiresAt: connection.expiresAt || undefined,
+    expiresAt,
   }
 }
 

@@ -5,6 +5,8 @@ import { firestore } from '@/lib/db/firestore'
 import { prisma } from '@/lib/db/postgres'
 import { geminiAPI } from '@/lib/integrations/gemini'
 
+export const dynamic = 'force-dynamic'
+
 type NormalizedSentiment = 'positive' | 'neutral' | 'negative'
 type NormalizedCommentType = 'question' | 'complaint' | 'praise' | 'spam' | 'general'
 

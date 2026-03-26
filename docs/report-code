@@ -1,0 +1,1570 @@
+\documentclass[12pt,a4paper]{report}
+
+\usepackage[left=1.5in,right=1in,top=1in,bottom=1in]{geometry}
+\usepackage{setspace}
+\usepackage{graphicx}
+\usepackage{tikz}
+\usetikzlibrary{positioning, shapes, arrows.meta, fit}
+\onehalfspacing
+\usepackage{tikz}
+\usetikzlibrary{positioning, shapes.geometric, arrows.meta, fit}
+\usepackage{float}
+\usepackage{eso-pic}
+% Define styles
+\tikzstyle{process} = [rectangle, rounded corners, minimum width=3cm, minimum height=1cm, text centered, draw=black]
+\tikzstyle{database} = [cylinder, shape border rotate=90, aspect=0.25, draw, minimum height=1cm, minimum width=2cm]
+\tikzstyle{io} = [trapezium, trapezium left angle=70, trapezium right angle=110, draw]
+\tikzstyle{external} = [rectangle, dashed, draw]
+\tikzstyle{arrow} = [thick,->,>=stealth]
+% ✅ NO WORD BREAK + NO HYPHEN + NO ERROR
+\sloppy
+\usepackage{titlesec}
+\usepackage[hidelinks]{hyperref}
+% Center ALL numbered chapters
+\titleformat{\chapter}[display]
+  {\centering\bfseries\Huge}
+  {\chaptername\ \thechapter}
+  {1em}
+  {}
+
+% Center ALL unnumbered chapters (\chapter*)
+\titleformat{name=\chapter,numberless}[display]
+  {\centering\bfseries\Huge}
+  {}
+  {0pt}
+  {}
+
+\usepackage{caption}
+\usepackage{hyperref}
+\renewcommand{\figurename}{Fig.}
+\begin{document}
+
+%================ TITLE PAGE =================%
+
+\begin{titlepage}
+
+\begin{center}
+
+\vspace*{0.5cm}
+
+{\LARGE \textbf{MAJOR PROJECT REPORT}}
+
+\vspace{1.5cm}
+
+{\Huge \textbf{REVAI:}}\\[0.3cm]
+{\large Intelligent Social Media Monitoring and Auto-Response
+Orchestration System}
+
+\vspace{1.8cm}
+
+{\large Submitted by}
+
+\vspace{0.6cm}
+
+\begin{tabular}{c}
+Marcio Naiene (20222065)\\
+Mohamed Ihsan P R (20222070)\\
+Pratibha Bharti (20222082)\\
+Sanvi Bhardwaj (20222091)\\
+Yashaswi Abhinav (20222568)
+\end{tabular}
+
+\vspace{1.8cm}
+
+In partial fulfillment of the requirements for the award of the degree of
+
+\vspace{0.3cm}
+
+Bachelor of Technology in Computer Science and Engineering
+
+\vspace{1.8cm}
+
+\includegraphics[width=3cm]{cusatcolor.png}
+
+\vspace{0.8cm}
+
+{\large DIVISION OF COMPUTER SCIENCE AND ENGINEERING}\\
+{\large SCHOOL OF ENGINEERING}\\
+{\large COCHIN UNIVERSITY OF SCIENCE AND TECHNOLOGY}
+
+\vspace{1cm}
+
+{\large MARCH 2026}
+
+\end{center}
+
+\end{titlepage}
+
+\newpage
+%================ CERTIFICATE =================%
+
+\thispagestyle{empty}
+
+\begin{center}
+
+\includegraphics[width=2.8cm]{cusatcolor.png}
+
+\vspace{0.5cm}
+
+{\large DIVISION OF COMPUTER SCIENCE AND ENGINEERING}\\
+{\large SCHOOL OF ENGINEERING}\\
+{\large COCHIN UNIVERSITY OF SCIENCE AND TECHNOLOGY}
+
+\vspace{1cm}
+
+{\textbf{\Huge CERTIFICATE}}
+
+
+
+\vspace{1cm}
+
+Certified that this is a bonafide record of the project entitled
+
+\begin{center}
+\textbf{“Intelligent Social Media Monitoring and Auto-Response
+Orchestration System”}
+\end{center}
+
+submitted by
+
+\vspace{0.3cm}
+
+\begin{center}
+\begin{tabular}{c}
+Marcio Naiene (20222065)\\
+Mohamed Ihsan P R (20222070)\\
+Pratibha Bharti (20222082)\\
+Sanvi Bhardwaj (20222091)\\
+Yashaswi Abhinav (20222568)
+\end{tabular}
+\end{center}
+
+\vspace{0.3cm}
+
+of VIII Semester Computer Science and Engineering in the year 2026 in partial fulfillment of the requirements for the award of the degree of Bachelor of Technology in Computer Science and Engineering of Cochin University of Science and Technology.
+
+\vspace{2.5cm}
+
+\begin{center}
+\noindent
+Dr. Pramod Pavithran \hfill Dr. Pramod Pavithran
+
+Head of Division \hfill Project Guide \& Coordinator
+\end{center}
+\end{center}
+\newpage
+%================ ACKNOWLEDGEMENT =================%
+
+\pagenumbering{roman}
+
+\chapter*{\begin{center}ACKNOWLEDGEMENT\end{center}}
+
+\noindent
+We would like to express our sincere gratitude to the Almighty for giving us the strength and determination to successfully complete this project. We are extremely thankful to our project guide, Dr. Pramod Pavithran, for his continuous support, valuable suggestions and guidance throughout the development of this work. His insights and encouragement helped us in understanding the concepts clearly and improving our implementation.
+
+\noindent
+We also extend our sincere thanks to the Head of the Division and all the faculty members of the Division of Computer Science and Engineering for providing us with the necessary support and facilities to carry out this project successfully. Their guidance and encouragement played an important role in completing this work.
+
+\noindent
+We would also like to thank our friends for their support, cooperation and helpful discussions during the course of this project. Finally, we express our heartfelt gratitude to our parents and family members for their constant encouragement, motivation and support.
+
+\vspace{1.2cm}
+
+\noindent
+Marcio Naiene (20222065)\\
+Mohamed Ihsan P R (20222070)\\
+Pratibha Bharti (20222082)\\
+Sanvi Bhardwaj (20222091)\\
+Yashaswi Abhinav (20222568)
+
+\newpage
+%================ DECLARATION =================%
+
+\chapter*{\begin{center}DECLARATION\end{center}}
+
+We,\textbf{ Marcio Naiene, Mohamed Ihsan P R, Pratibha Bharti, Sanvi Bhardwaj  and Yashaswi Abhinav }, hereby declare that this project is the record of authentic work carried out by us during the academic year 2025–2026 and has not been submitted to any other University or Institute towards the award of any Degree.
+
+\newpage
+
+%================ ABSTRACT =================%
+
+\chapter*{\begin{center}ABSTRACT\end{center}}
+
+\noindent
+The ``RevAI: Intelligent Social Media Monitoring and Auto Response Orchestration System'' project aims to develop an advanced platform to address the growing challenge of managing high-volume customer comments across multiple social media and e-commerce platforms. Businesses and content creators are often overwhelmed by the volume of interactions, leading to missed engagement opportunities and reduced quality of customer service.
+
+\noindent
+This project leverages modern APIs such as Meta Graph API and YouTube Data API, along with a robust backend system and powerful AI models, to create a unified dashboard. The system collects feedback from all connected platforms, stores it in a centralized database, and utilizes a scheduled workflow manager (Apache Airflow) to process the data in batches efficiently.
+
+\noindent
+An AI engine analyzes each comment’s intent, tone, and content to generate intelligent and context-aware responses based on user-defined rules. These responses are then automatically posted to the respective platforms, ensuring timely and consistent engagement.
+
+\noindent
+The RevAI platform provides an innovative solution to streamline customer interaction, deliver valuable insights, and ensure that no customer comment goes unnoticed. It enables businesses to maintain a responsive and professional online presence, improve customer satisfaction, and reduce manual effort while also offering insights into market trends and customer preferences.
+
+\newpage
+
+%================ CONTENTS =================%
+
+\tableofcontents
+\newpage
+
+\pagenumbering{arabic}
+
+%================ CHAPTER 1 =================%
+
+\chapter{INTRODUCTION}
+
+\section{Background}
+
+\noindent
+In the current digital landscape, social media platforms have become an integral part of communication between businesses, organizations and their customers. Platforms such as YouTube, Instagram and Facebook are widely used for marketing, customer support and brand engagement. Users actively interact with content by posting comments, asking questions, sharing feedback and expressing their opinions.
+
+\noindent
+With the rapid growth in the number of users and content creators, the volume of user-generated content has increased significantly. As a result, businesses and content creators receive a large number of comments on their posts, videos and advertisements. Managing these interactions manually has become increasingly difficult, especially when the volume is high and responses are expected in real time.
+
+\noindent
+Timely and relevant responses to user comments play a crucial role in maintaining customer satisfaction and improving brand reputation. However, due to the high volume of interactions, many comments remain unanswered or receive delayed responses. This leads to poor user experience, reduced engagement and potential loss of customers.
+
+\noindent
+In recent years, advancements in web technologies, cloud computing and artificial intelligence have enabled the development of intelligent systems that can automate repetitive tasks and improve operational efficiency. These technologies provide an opportunity to design systems that can handle large-scale user interactions effectively and consistently.
+
+\section{Problem Statement}
+
+\noindent
+The primary challenge faced by businesses and content creators is the inability to efficiently manage and respond to a large number of user comments across multiple platforms. Each social media platform operates independently, which makes it difficult to monitor all interactions from a single interface. This lack of integration leads to fragmented data and inefficient workflows.
+
+\noindent
+Another significant issue is the manual effort required to read, understand and respond to each comment. This process is not only time-consuming but also prone to errors and inconsistencies. In many cases, important comments such as customer queries or complaints may be overlooked, resulting in poor customer service.
+
+\noindent
+Furthermore, traditional systems do not provide intelligent analysis of user comments. Understanding the intent, sentiment and context of comments is essential for generating meaningful responses. Without such analysis, responses may be generic, irrelevant or inappropriate.
+
+\noindent
+Therefore, there is a strong need for an automated system that can integrate multiple platforms, analyze user comments intelligently and generate accurate responses in a timely manner.
+
+\section{Motivation}
+
+\noindent
+The motivation behind this project arises from the increasing demand for efficient customer engagement solutions in the digital space. Businesses are continuously looking for ways to improve their interaction with customers while minimizing manual effort and operational costs.
+
+\noindent
+Social media has become a primary medium for customer communication, and maintaining an active presence on these platforms is essential for success. However, the sheer volume of interactions makes it difficult for businesses to respond to every comment promptly.
+
+\noindent
+An intelligent automated system can significantly improve response efficiency by handling repetitive tasks and providing quick replies to user queries. This not only enhances customer satisfaction but also allows businesses to focus on more critical tasks such as strategy and decision-making.
+
+\noindent
+The integration of AI-based processing further enhances the capability of the system by enabling it to understand user intent and generate context-aware responses. This ensures that the quality of responses is maintained while achieving automation.
+
+\section{Proposed System}
+
+\noindent
+The proposed system, ``RevAI: Intelligent Social Media Auto-Response System'', is designed to automate the process of monitoring, analyzing and responding to user comments across multiple social media platforms. The system provides a unified platform where users can connect their accounts, select content to monitor and manage interactions efficiently.
+
+\noindent
+The system architecture consists of multiple components including a frontend interface, backend services, database systems and an automation engine. The frontend provides an interactive user interface for managing connections and viewing data. The backend handles API requests, authentication and business logic.
+
+\noindent
+The system integrates with external platforms using their APIs to fetch comments from selected content. These comments are stored in a centralized database for further processing. An AI model is used to analyze each comment and determine its intent, sentiment and context.
+
+\noindent
+Based on the analysis, the system generates appropriate responses that are relevant and aligned with user-defined preferences. These responses are then automatically posted to the respective platforms using an automated workflow.
+
+\noindent
+The automation engine plays a crucial role in the system by scheduling tasks such as comment fetching, processing and response posting. This ensures that the system operates efficiently without requiring continuous manual intervention.
+
+\section{Objectives}
+
+\noindent
+The main objectives of this project are as follows:
+
+\begin{itemize}
+\item To design and develop an automated system for monitoring user comments across multiple social media platforms
+\item To implement intelligent processing of comments using an AI model for intent and sentiment analysis
+\item To generate context-aware and relevant responses automatically
+\item To reduce manual effort and improve operational efficiency
+\item To provide a centralized dashboard for managing and monitoring interactions
+\item To generate analytical reports for understanding user behavior and engagement trends
+\item To ensure scalability and reliability in handling large volumes of data
+\end{itemize}
+
+\section{Scope of the Project}
+
+\noindent
+The scope of the RevAI system includes monitoring comments from selected social media platforms, processing them using AI techniques and automatically generating and posting responses. The system focuses on improving customer engagement by ensuring that all comments are handled efficiently and effectively.
+
+\noindent
+The platform supports integration with multiple social media platforms and provides a unified interface for managing interactions. It is designed to handle large volumes of data using scalable architecture and efficient processing mechanisms.
+
+\noindent
+The system also provides analytical insights such as sentiment distribution, frequently asked questions and engagement trends. These insights help businesses understand customer preferences and improve their strategies.
+
+\noindent
+Future enhancements of the system may include real-time processing, support for additional platforms, improved AI models and advanced analytics for deeper insights into user behavior.
+
+\section{Significance of the Project}
+
+\noindent
+The RevAI system provides a significant contribution to the field of automated customer engagement by combining modern web technologies with intelligent processing. It addresses the challenges of managing high-volume interactions and provides a scalable solution for businesses and content creators.
+
+\noindent
+By automating the process of comment monitoring and response generation, the system reduces manual effort and improves efficiency. It ensures that all user interactions are handled promptly, leading to better customer satisfaction and improved brand image.
+
+\noindent
+The integration of AI-based processing enhances the capability of the system by enabling it to understand user intent and generate meaningful responses. This makes the system more effective and reliable compared to traditional approaches.
+
+\noindent
+Overall, the project demonstrates the potential of combining automation and artificial intelligence to solve real-world problems in the domain of social media engagement.
+
+%================ CHAPTER 2 =================%
+
+\chapter{LITERATURE REVIEW}
+
+\section{Introduction}
+
+\noindent
+With the rapid growth of social media platforms, businesses and content creators are increasingly relying on these platforms for customer engagement, marketing and feedback collection. Managing large volumes of user interactions has become a significant challenge, leading to the development of automated systems for monitoring and responding to user comments.
+
+\noindent
+Various research works and existing systems have explored the use of automation and artificial intelligence for handling customer interactions. This chapter reviews relevant literature and existing approaches related to social media monitoring, automated response systems and AI-based text processing.
+
+\section{Social Media Monitoring Systems}
+
+\noindent
+Social media monitoring systems are designed to track user interactions such as comments, likes and shares across different platforms. Several tools have been developed to collect and analyze user-generated content in real time. These systems provide insights into user behavior, trends and engagement levels.
+
+\noindent
+However, most traditional monitoring systems focus only on data collection and visualization. They lack the ability to automatically respond to user comments, which limits their effectiveness in improving customer engagement.
+
+\section{Automated Response Systems}
+
+\noindent
+Automated response systems have been widely used in customer support applications such as chatbots and email automation. These systems use predefined rules or templates to generate responses based on user input.
+
+\noindent
+While rule-based systems are simple and efficient, they lack flexibility and are unable to handle complex or context-dependent queries. This limitation has led to the development of AI-based response generation systems that can understand natural language and generate more accurate responses.
+
+\section{AI-Based Text Processing}
+
+\noindent
+Artificial intelligence has played a significant role in improving the capabilities of automated systems. Techniques such as Natural Language Processing (NLP) and machine learning are used to analyze text data and extract meaningful information.
+
+\noindent
+AI models can classify text based on sentiment, intent and context. This allows systems to understand whether a comment is a question, complaint or feedback. Based on this analysis, appropriate responses can be generated automatically.
+
+\noindent
+Recent advancements in AI have enabled the development of models that can generate human-like text responses. These models improve the quality and relevance of automated replies, making them more suitable for real-world applications.
+
+\section{Workflow Automation Systems}
+
+\noindent
+Workflow automation tools are used to schedule and manage repetitive tasks in a system. These tools ensure that processes are executed efficiently without manual intervention. In the context of social media management, workflow automation can be used to fetch comments, process them and post responses at regular intervals.
+
+\noindent
+Automation systems improve scalability by allowing the system to handle large volumes of data without performance degradation. They also provide better control over task scheduling and execution.
+
+\section{Database Management Approaches}
+
+\noindent
+Efficient data storage and management are essential for handling large-scale systems. Traditional relational databases are used for storing structured data such as user information and system configurations. On the other hand, NoSQL databases are used for handling unstructured and high-volume data such as comments and responses.
+
+\noindent
+The combination of relational and NoSQL databases provides flexibility and scalability, allowing the system to manage different types of data efficiently.
+
+\section{Limitations of Existing Systems}
+
+\noindent
+Despite the availability of various tools and technologies, existing systems have certain limitations:
+
+\begin{itemize}
+\item Lack of integration across multiple social media platforms
+\item Limited automation capabilities
+\item Inability to generate context-aware responses
+\item Dependence on manual intervention
+\item Scalability issues when handling large volumes of data
+\end{itemize}
+
+\noindent
+These limitations highlight the need for a more advanced system that combines automation, AI-based processing and multi-platform integration.
+
+\section{Proposed System Contribution}
+
+\noindent
+The proposed system, RevAI, addresses the limitations of existing approaches by providing a unified platform for monitoring, analyzing and responding to user comments. It integrates multiple social media platforms, uses AI models for intelligent processing and incorporates workflow automation for efficient task management.
+
+\noindent
+Unlike traditional systems, RevAI not only monitors comments but also generates context-aware responses and posts them automatically. It also provides analytical insights that help users understand customer behavior and improve engagement strategies.
+
+\noindent
+Thus, the proposed system offers a comprehensive solution for managing social media interactions in an efficient and scalable manner.
+
+%================ CHAPTER 3 =================%
+
+\chapter{SYSTEM ANALYSIS}
+
+\section{Existing System}
+
+The existing approach to managing customer interactions across social media platforms is largely manual, fragmented, and inefficient. Businesses and content creators rely on individual platform dashboards such as Instagram, Facebook, and YouTube to monitor and respond to user comments. As the number of users and platforms increases, handling interactions becomes increasingly complex and time-consuming.
+
+Currently, most organizations depend on human operators or social media managers to continuously monitor comments, reply to customer queries, and maintain engagement. This traditional approach is not only resource-intensive but also prone to errors and delays.
+
+This leads to several critical challenges:
+
+\begin{itemize}
+    \item \textbf{High Manual Effort:} Users must frequently switch between multiple platforms to check comments and respond individually. This repetitive process consumes significant time and human resources, especially for businesses handling thousands of interactions daily.
+    
+    \item \textbf{Lack of Centralization:} There is no unified system to aggregate comments from multiple platforms. As a result, important messages may be overlooked, and tracking user interactions becomes difficult.
+    
+    \item \textbf{Delayed Response Time:} Manual handling causes delays in responding to customer queries, particularly outside working hours. This negatively impacts user satisfaction and reduces engagement rates.
+    
+    \item \textbf{Inconsistent Responses:} Replies depend on the individual handling the account, leading to variations in tone, language, and accuracy. This inconsistency can harm brand identity and professionalism.
+    
+    \item \textbf{Limited Automation:} Existing tools primarily rely on keyword-based auto-replies. These systems lack contextual understanding and fail to address user queries effectively, often resulting in irrelevant or generic responses.
+    
+    \item \textbf{No Intelligent Insights:} Traditional systems do not provide advanced analytics such as sentiment analysis, trend detection, or customer behavior insights, limiting strategic decision-making.
+    
+    \item \textbf{Scalability Issues:} As the number of users and interactions increases, manual systems fail to scale efficiently, leading to bottlenecks and reduced performance.
+    
+    \item \textbf{Risk of Human Error:} Important comments may be missed or incorrectly handled, affecting customer trust and business reputation.
+\end{itemize}
+
+These limitations result in poor customer engagement, missed business opportunities, inefficient resource utilization, and an overall decline in service quality.
+
+\section{Proposed System}
+
+To address the limitations of the existing system, the proposed solution, \textbf{RevAI}, is designed as an intelligent, automated, and centralized platform. It integrates modern web technologies, cloud databases, workflow automation, and advanced artificial intelligence to provide a seamless solution for social media management.
+
+RevAI focuses on reducing manual workload, improving response quality, and enabling real-time insights through automation and AI-driven processing.
+
+\subsection{Key Components}
+
+The system is composed of the following major components:
+
+\begin{enumerate}
+    \item \textbf{Frontend (User Interface):}  
+    The frontend is a web-based dashboard built using modern frameworks such as Next.js. It provides an intuitive interface where users can register, log in, connect their social media accounts using OAuth 2.0, and configure system settings such as reply tone, filters, and automation preferences. The UI is designed to be user-friendly, ensuring accessibility for both technical and non-technical users.
+    
+    \item \textbf{Backend (API Layer):}  
+    The backend acts as the central control unit of the system. It handles user authentication, API communication, token management, and request processing. It also ensures secure interaction between the frontend, databases, and external APIs. The backend is responsible for enforcing business logic and maintaining system integrity.
+    
+    \item \textbf{Databases:}
+    \begin{itemize}
+        \item \textbf{PostgreSQL:} A relational database used to store structured and critical data such as user credentials, encrypted API tokens, platform connection details, and system configurations. It ensures data consistency and security.
+        
+        \item \textbf{Firebase Firestore:} A NoSQL database used to store unstructured and high-volume data such as comments, AI-generated replies, processing status, and reports. It provides scalability and real-time synchronization capabilities.
+    \end{itemize}
+    
+    \item \textbf{Workflow Orchestration (Apache Airflow):}  
+    Apache Airflow is used to automate and manage workflows through Directed Acyclic Graphs (DAGs). It schedules tasks such as fetching comments, processing them using AI, and posting replies at predefined intervals. Airflow ensures reliability by supporting retries, logging, and monitoring.
+    
+    \item \textbf{AI Engine (Gemini API):}  
+    The AI engine leverages advanced Natural Language Processing (NLP) techniques to analyze user comments. It classifies comments based on intent (e.g., query, complaint, spam) and generates context-aware, human-like responses. This significantly enhances user engagement and response quality.
+\end{enumerate}
+
+\subsection{Advantages of Proposed System}
+
+The proposed system offers several advantages over traditional approaches:
+
+\begin{itemize}
+    \item \textbf{Automation:} Eliminates the need for manual monitoring and replying, significantly reducing human effort and operational costs.
+    
+    \item \textbf{Centralization:} Provides a unified dashboard where all comments from different platforms are managed in one place.
+    
+    \item \textbf{Scalability:} Designed to handle large volumes of data and users efficiently, making it suitable for both small businesses and large enterprises.
+    
+    \item \textbf{Intelligent Responses:} Uses AI to generate meaningful, context-aware replies instead of generic responses, improving customer satisfaction.
+    
+    \item \textbf{Reliability:} Airflow-based scheduling ensures tasks are executed consistently, with retry mechanisms for handling failures.
+    
+    \item \textbf{Real-Time Insights:} Enables analysis of customer sentiment, trends, and behavior, helping businesses make data-driven decisions.
+    
+    \item \textbf{Improved Customer Engagement:} Faster and more accurate responses lead to better interaction and increased user trust.
+    
+    \item \textbf{Enhanced Security:} Sensitive data such as API tokens are encrypted, ensuring secure system operations.
+\end{itemize}
+
+%================ CHAPTER 4 =================%
+
+\chapter{SYSTEM DESIGN}
+
+\section{System Architecture}
+
+The RevAI system is designed using a modular and scalable architecture that integrates frontend, backend, databases, workflow automation, and AI services. This architecture ensures efficient handling of large volumes of social media data, secure communication, and reliable automation of tasks.
+
+The system follows a client-server architecture where the user interacts with the frontend interface, which communicates with the backend API. The backend processes requests, interacts with databases, and coordinates with workflow automation and AI services.
+
+\begin{figure}[htbp]
+  \centering
+  \resizebox{\textwidth}{!}{%
+    \begin{tikzpicture}[node distance=1cm and 1.5cm, auto, every node/.style={font=\small}]
+      % Nodes
+      \node [io] (user) {User (Browser)};
+      \node [process, right=of user] (frontend) {Frontend (React Web App)};
+      \node [process, right=of frontend] (backend) {Backend API (Node.js)};
+
+      \node [database, below=of backend] (pg_db) {PostgreSQL DB (Users, Tokens)};
+      \node [database, right=of backend] (fs_db) {Firestore DB (Comments)};
+
+      \node [process, below=of pg_db] (airflow) {Apache Airflow (Workflow Engine)};
+
+      \node [external, right=of fs_db] (external_apis) {External APIs (Meta, YouTube, reddit)};
+
+      % Arrows
+      \draw [arrow, <->] (user) -- (frontend);
+      \draw [arrow, <->] (frontend) -- (backend);
+
+      \draw [arrow, <->] (backend) -- (pg_db);
+      \draw [arrow, <->] (backend) -- (fs_db);
+
+      \draw [arrow, <->] (airflow) -- (pg_db);
+      \draw [arrow, <->] (airflow) -- (fs_db);
+
+      \draw [arrow, <->] (airflow) -- (external_apis);
+      \draw [arrow, <->] (backend) -- (external_apis);
+
+      % Box around components
+      \node [draw, dashed, fit=(frontend) (backend) (pg_db) (fs_db) (airflow), inner sep=0.5cm, label=above:RevAI System Components] (system_box) {};
+    \end{tikzpicture}
+  }
+  \caption{RevAI High-Level System Architecture}
+  \label{fig:architecture}
+\end{figure}
+
+The overall system architecture is illustrated in Fig.~\ref{fig:architecture}, showing the interaction between frontend, backend, databases, and external services.
+
+The architecture clearly separates responsibilities among different components. The frontend handles user interaction, the backend manages logic and API communication, databases store data, Airflow automates workflows, and AI generates intelligent responses.
+
+\section{Data Flow Diagram}
+
+The system processes data in multiple stages, including user interaction, data ingestion, processing, and automated response generation.
+
+\subsection{User Registration and Platform Connection}
+
+\begin{itemize}
+    \item The user registers and logs into the system through the frontend interface.
+    \item Authentication is handled securely using NextAuth.
+    \item The system uses OAuth 2.0 to connect social media platforms such as YouTube and Instagram.
+    \item Access tokens received are encrypted using AES-256 encryption.
+    \item Encrypted tokens are stored securely in PostgreSQL.
+    \item The user selects specific content (videos or posts) to monitor.
+\end{itemize}
+
+
+
+\subsection{Automated Comment Processing Workflow}
+
+\begin{itemize}
+    \item Apache Airflow schedules tasks at regular intervals.
+    \item Comments are fetched from connected platforms using APIs.
+    \item Retrieved comments are stored in Firestore with status \textit{pending}.
+    \item The AI engine analyzes comments to determine intent and sentiment.
+    \item Context-aware replies are generated automatically.
+    \item Replies are posted back to the respective platforms.
+    \item The comment status is updated to \textit{replied}.
+\end{itemize}
+\begin{figure}[htbp]
+\centering
+\resizebox{\textwidth}{!}{%
+\begin{tikzpicture}[
+    every node/.style={font=\small, align=center},
+    airflow/.style={rectangle, rounded corners, draw=blue!60, thick, fill=blue!5, text width=3cm, minimum height=1cm, text centered},
+    database/.style={cylinder, cylinder uses custom shape, draw=orange!60, fill=orange!10, thick, aspect=0.25, text width=2.5cm, minimum height=1.2cm, text centered},
+    external/.style={rectangle, draw=gray!80, thick, fill=gray!10, text width=3cm, minimum height=1cm, text centered},
+    arrow/.style={->, thick, >=stealth}
+]
+
+% ------------------- TRIANGLE POLLING -------------------
+\node[airflow] (airflow_poll) at (0,0) {Apache Airflow\\\small Polling DAG};
+\node[database] (postgres) at (-4,-3) {PostgreSQL\\(Tokens)};
+\node[external] (youtube) at (4,-3) {YouTube API};
+
+% ------------------- PROCESSING LAYER -------------------
+\node[database] (firestore) at (0,-6) {Firestore DB};
+\node[external] (ai) at (4,-7.5) {AI Model\\(Gemini / LLM)};
+\node[airflow] (airflow_proc) at (0,-9) {Apache Airflow\\\small Processing DAG (Every 2 Hrs)};
+\node[airflow] (report) at (0,-11) {Report Generator};
+
+% ------------------- ARROWS: POLLING -------------------
+\draw[arrow] (airflow_poll.south west) -- node[midway, left, xshift=-2mm] {1. Get Token} (postgres.north east);
+\draw[arrow] (airflow_poll.south east) -- node[midway, right, xshift=2mm] {2. Poll Comments} (youtube.north west);
+\draw[arrow, bend right=45] (youtube.north east) to node[midway, below, yshift=-2mm] {3. Return Comments} (airflow_poll.north east);
+\draw[arrow] (postgres.south) -- ++(0,-0.5) -| node[pos=0.25, left, xshift=-2mm, yshift=-1.3mm] {4. Save Pending} (firestore.west);
+\draw[arrow] (youtube.south) -- ++(0,-0.5) -| node[pos=0.25, right, xshift=-15mm, yshift=1.3mm] {4. Save Pending} (firestore.east);
+
+% ------------------- ARROWS: PROCESSING -------------------
+\draw[arrow] (airflow_proc.north) -- node[left] {5. Fetch Pending} (firestore.south);
+
+% --- MODIFICATION: Rerouted arrows 6, 7, 8 to avoid overlap ---
+% Shifted intermediate point for 6 (changed ++(1.5,0) to ++(0.5,0))
+\draw[arrow] (airflow_proc.east) -- ++(0.5,0) |- node[above, xshift=1cm, yshift=-2.8cm] {6. Generate Replies} (ai.north west);
+% Shifted intermediate point for 7 (changed ++(0,-0.5) to ++(0.5,0))
+\draw[arrow] (ai.south) -- ++(0.5,0) -| node[pos=0.25, right, xshift=2mm, yshift=-2mm] {7. Save Replies} (firestore.east);
+% Shifted intermediate point for 8 (changed ++(-1,0) to ++(-0.5,0))
+\draw[arrow] (airflow_proc.west) -- ++(-0.5,0) |- node[pos=0.25, left, xshift=-2mm] {8. Update Status} (firestore.west);
+% --- END OF MODIFICATION ---
+
+\draw[arrow] (airflow_proc.south) -- node[right] {9. Create Report Entries} (report.north);
+
+% ------------------- GROUP BOXES -------------------
+\node[draw, dashed, thick, fit=(airflow_poll)(postgres)(youtube), inner sep=0.8cm, label=above:{\textbf{Part 1: Polling Process}}] (poll_box) {};
+\node[draw, dashed, thick, fit=(airflow_proc)(firestore)(ai)(report), inner sep=0.7cm, label=below:{\textbf{Part 2: Processing \& Reporting}}] (proc_box) {};
+
+\end{tikzpicture}%
+}
+\caption{YouTube Comment Handling Workflow (Optimized Orthogonal Layout)}
+\label{fig:dfd}
+\end{figure}
+
+The automated workflow for comment processing is shown in Fig.~\ref{fig:dfd}, illustrating the interaction between Airflow, databases, and the AI model.
+
+\newpage
+
+\section{Database Design}
+
+The RevAI system uses a hybrid database approach to efficiently manage both structured and unstructured data.
+
+\subsection{PostgreSQL}
+
+PostgreSQL is used as a relational database for storing structured and critical data.
+
+\begin{itemize}
+    \item Stores user account information and authentication credentials
+    \item Stores encrypted OAuth tokens
+    \item Maintains platform connection details
+    \item Stores configuration settings and rate limits
+    \item Ensures data consistency through ACID properties
+\end{itemize}
+
+\subsection{Firebase Firestore}
+
+Firestore is used as a NoSQL database to handle large volumes of dynamic data.
+
+\begin{itemize}
+    \item Stores comments fetched from social media platforms
+    \item Stores AI-generated replies and classifications
+    \item Maintains comment status (pending, replied)
+    \item Stores reports and analytics data
+    \item Provides scalability and real-time data handling
+\end{itemize}
+\\
+\begin{figure}[H]
+\centering
+\includegraphics[height=7cm,width=14cm]{fireStore.png}
+\caption{Firestore Database Snippet}
+\label{fig:firestore}
+\end{figure}
+This hybrid approach shown in Fig.~\ref{fig:firestore} ensures high performance, scalability, and flexibility in managing different types of data.
+
+\section{Security Architecture}
+
+Security is a crucial component of the system, as it deals with sensitive user data and API credentials.
+
+\begin{itemize}
+    \item All tokens and sensitive data are encrypted using AES-256 encryption.
+    \item Secure communication is ensured using HTTPS protocol.
+    \item Authentication mechanisms restrict access to authorized users only.
+    \item Firestore security rules enforce user-level data access.
+    \item Sensitive data is never exposed in logs or frontend.
+\end{itemize}
+
+\section{Modular Design}
+
+The system is divided into multiple independent modules to ensure maintainability and scalability.
+
+\begin{itemize}
+    \item \textbf{Authentication Module:} Handles user login and registration.
+    \item \textbf{OAuth Module:} Manages secure platform connections.
+    \item \textbf{Data Ingestion Module:} Fetches comments from APIs and webhooks.
+    \item \textbf{AI Processing Module:} Processes comments and generates replies.
+    \item \textbf{Reply Dispatcher Module:} Sends replies to platforms.
+    \item \textbf{Scheduler Module:} Automates workflows using Apache Airflow.
+\end{itemize}
+
+\section{Deployment Architecture}
+
+\subsection{Development Environment}
+
+\begin{itemize}
+    \item Frontend and backend run locally on the system
+    \item PostgreSQL and Airflow are managed using Docker
+    \item Firebase services are accessed via cloud
+\end{itemize}
+
+\subsection{Production Environment}
+
+\begin{itemize}
+    \item Frontend deployed on Vercel
+    \item Backend hosted on cloud platforms such as Render or Railway
+    \item PostgreSQL deployed on Supabase or Neon
+    \item Firestore managed via Google Cloud
+    \item Apache Airflow deployed on cloud infrastructure for automation
+\end{itemize}
+
+%================ CHAPTER 5 =================%
+
+\chapter{TECHNOLOGIES AND REQUIREMENTS}
+
+\section{Introduction}
+
+This chapter provides an in-depth description of the technologies, tools, frameworks, and platforms used in the development of the RevAI system. It also specifies the system requirements needed for efficient implementation and execution of the system.
+
+RevAI is designed as an intelligent, scalable, and automated web-based system that integrates multiple modern technologies such as full-stack web frameworks, artificial intelligence models, distributed databases, and workflow automation systems. The system processes large volumes of real-time social media data and generates intelligent responses, which requires careful selection of technologies that can handle concurrency, scalability, and reliability.
+
+The technology stack is chosen by considering key factors such as performance, scalability, security, flexibility, ease of development, and integration capabilities with third-party APIs.
+
+\section{Technologies Used}
+
+The RevAI system is built using a multi-layered architecture consisting of presentation layer, application layer, data layer, and automation layer. Each layer is implemented using specialized technologies.
+
+\subsection{Frontend Technologies}
+
+\subsubsection{Next.js Framework}
+
+Next.js 14 is used as the core frontend framework for building the user interface. It is a React-based framework that supports hybrid rendering techniques.
+
+\textbf{Core Capabilities:}
+\begin{itemize}
+    \item Server-Side Rendering (SSR) for dynamic content
+    \item Static Site Generation (SSG) for faster page loads
+    \item Client-side rendering for interactivity
+    \item File-based routing system
+\end{itemize}
+
+\textbf{Internal Working:}
+Next.js splits the application into server and client components. Server components handle data fetching and processing, while client components handle user interactions and dynamic UI updates.
+
+\textbf{Role in RevAI:}
+\begin{itemize}
+    \item Provides dashboard interface for users
+    \item Displays comments, analytics, and reports
+    \item Handles user inputs such as connecting accounts and configuring settings
+\end{itemize}
+
+\textbf{Advantages:}
+\begin{itemize}
+    \item Faster performance due to optimized rendering
+    \item Reduced API complexity
+    \item Built-in backend support
+\end{itemize}
+
+\textbf{Limitations:}
+\begin{itemize}
+    \item Learning curve for advanced features
+    \item Requires proper structuring for scalability
+\end{itemize}
+
+\subsubsection{TypeScript}
+
+TypeScript is used to enhance JavaScript by adding static typing.
+
+\textbf{Role in RevAI:}
+\begin{itemize}
+    \item Ensures type safety across frontend and backend
+    \item Improves debugging efficiency
+    \item Reduces runtime errors
+\end{itemize}
+
+\textbf{Advantages:}
+\begin{itemize}
+    \item Better code structure
+    \item Improved collaboration in team development
+    \item Easier refactoring
+\end{itemize}
+
+\subsubsection{Tailwind CSS}
+
+Tailwind CSS is used for styling the application.
+
+\textbf{Working Principle:}
+It uses utility classes directly in HTML/JSX instead of writing separate CSS files.
+
+\textbf{Advantages:}
+\begin{itemize}
+    \item Faster UI development
+    \item Consistent design system
+    \item Easy responsiveness
+\end{itemize}
+
+\textbf{Role in RevAI:}
+\begin{itemize}
+    \item Builds responsive dashboards
+    \item Provides modern UI components
+\end{itemize}
+
+\subsection{Backend Technologies}
+
+\subsubsection{Next.js API Routes}
+
+The backend logic is implemented using API routes.
+
+\textbf{Internal Working:}
+Each API route acts as a serverless function that processes HTTP requests and returns responses.
+
+\textbf{Responsibilities:}
+\begin{itemize}
+    \item Handling authentication requests
+    \item Processing business logic
+    \item Managing communication between frontend and database
+    \item Integrating AI Model and external APIs
+\end{itemize}
+
+\textbf{Advantages:}
+\begin{itemize}
+    \item No need for separate backend server
+    \item Faster deployment
+    \item Tight integration with frontend
+\end{itemize}
+
+\textbf{Limitations:}
+\begin{itemize}
+    \item Limited control over server configurations
+\end{itemize}
+
+\subsubsection{Prisma ORM}
+
+Prisma ORM is used for database interaction.
+
+\textbf{Internal Working:}
+Prisma generates a client based on schema definitions, which is used to query the database in a type-safe manner.
+
+\textbf{Role in RevAI:}
+\begin{itemize}
+    \item Manages relational data
+    \item Handles CRUD operations
+    \item Maintains database schema consistency
+\end{itemize}
+
+\textbf{Advantages:}
+\begin{itemize}
+    \item Type-safe queries
+    \item Reduced SQL complexity
+    \item Protection against SQL injection
+\end{itemize}
+
+\subsection{Database Technologies}
+
+\subsubsection{Hybrid Database Architecture}
+
+RevAI uses both relational and NoSQL databases to optimize performance and scalability.
+
+\textbf{Why Hybrid?}
+\begin{itemize}
+    \item Structured data requires consistency → PostgreSQL
+    \item Unstructured data requires flexibility → Firestore
+\end{itemize}
+
+\subsubsection{PostgreSQL}
+
+\textbf{Role:}
+\begin{itemize}
+    \item Stores user accounts
+    \item Stores encrypted tokens
+    \item Stores configuration data
+\end{itemize}
+
+\textbf{Features:}
+\begin{itemize}
+    \item ACID compliance
+    \item Data integrity
+    \item Strong relational model
+\end{itemize}
+
+\subsubsection{Firestore }
+
+\textbf{Role:}
+\begin{itemize}
+    \item Stores comments and replies
+    \item Stores AI outputs
+    \item Stores reports and analytics
+\end{itemize}
+
+\textbf{Advantages:}
+\begin{itemize}
+    \item Flexible schema
+    \item High scalability
+    \item Efficient handling of large datasets
+\end{itemize}
+
+\textbf{Comparison:}
+\begin{itemize}
+    \item PostgreSQL → Structured, consistent
+    \item Firestore → Flexible, scalable
+\end{itemize}
+
+\subsection{Artificial Intelligence Model}
+
+The AI Model is the core component responsible for intelligent processing of textual data.
+
+\textbf{Functionalities:}
+\begin{itemize}
+    \item Text classification
+    \item Sentiment analysis
+    \item Context-aware reply generation
+\end{itemize}
+
+\textbf{Processing Steps:}
+\begin{enumerate}
+    \item Input comment is received
+    \item Text preprocessing is applied
+    \item Model analyzes context and intent
+    \item Response is generated based on tone and rules
+\end{enumerate}
+
+\textbf{Advantages:}
+\begin{itemize}
+    \item Reduces manual workload
+    \item Provides human-like responses
+    \item Improves user engagement
+\end{itemize}
+
+\textbf{Limitations:}
+\begin{itemize}
+    \item May generate incorrect responses in edge cases
+    \item Depends on quality of input data
+\end{itemize}
+
+\subsection{Workflow Automation}
+
+\subsubsection{Apache Airflow}
+
+Airflow is used to automate system workflows.
+
+\textbf{Working Principle:}
+Airflow uses Directed Acyclic Graphs (DAGs) where each node represents a task.
+
+\textbf{Tasks in RevAI:}
+\begin{itemize}
+    \item Fetch comments
+    \item Process comments using AI Model
+    \item Post replies
+\end{itemize}
+
+\textbf{Advantages:}
+\begin{itemize}
+    \item Reliable scheduling
+    \item Error handling with retries
+    \item Scalable pipeline execution
+\end{itemize}
+
+\subsection{Security Mechanisms}
+
+\subsubsection{AES-256 Encryption}
+
+\textbf{Purpose:}
+\begin{itemize}
+    \item Encrypt OAuth tokens
+    \item Secure sensitive data
+\end{itemize}
+
+\subsubsection{HTTPS Protocol}
+
+\textbf{Purpose:}
+\begin{itemize}
+    \item Secure communication
+    \item Prevent data interception
+\end{itemize}
+
+\subsection{Deployment Technologies}
+
+\subsubsection{Docker}
+
+\textbf{Role:}
+\begin{itemize}
+    \item Containerization of services
+    \item Ensures consistency across environments
+\end{itemize}
+
+\subsubsection{Cloud Services}
+
+\begin{itemize}
+    \item Vercel (Frontend hosting)
+    \item Supabase/Neon (Database hosting)
+    \item Firebase (Cloud database)
+\end{itemize}
+
+\section{System Requirements}
+
+\subsection{Hardware Requirements}
+
+\begin{itemize}
+    \item Processor: Intel i3/i5/i7 or equivalent
+    \item RAM: Minimum 4GB, Recommended 8GB or higher
+    \item Storage: 10–20GB free disk space
+    \item Internet: High-speed internet connection
+\end{itemize}
+
+\subsection{Software Requirements}
+
+\begin{itemize}
+    \item Operating System: Windows/Linux/macOS
+    \item Node.js (v18+)
+    \item npm or yarn
+    \item Docker
+    \item Git
+    \item VS Code
+    \item Web Browser
+\end{itemize}
+
+\subsection{Functional Requirements}
+
+\begin{itemize}
+    \item User registration and login
+    \item Social media integration
+    \item Comment fetching
+    \item AI-based classification
+    \item Automated reply generation
+    \item Analytics dashboard
+    \item Report generation
+\end{itemize}
+
+\subsection{Non-Functional Requirements}
+
+\begin{itemize}
+    \item Performance optimization
+    \item Scalability support
+    \item High availability
+    \item Security and privacy
+    \item Usability and accessibility
+    \item Maintainability and modularity
+\end{itemize}
+
+\section{Summary}
+
+The technologies used in the RevAI system ensure a robust, scalable, and intelligent architecture capable of handling real-time social media interactions. The combination of modern frontend frameworks, backend services, databases, AI models, and automation tools results in a highly efficient system. The system requirements further define the necessary environment for smooth operation and deployment.
+
+
+
+%================ CHAPTER 6 =================%
+
+\chapter{System Implementation}
+
+\section{Introduction}
+
+The system implementation phase of the RevAI project focuses on transforming the designed architecture into a fully functional and automated system. This phase integrates multiple technologies such as frontend frameworks, backend APIs, database systems, artificial intelligence models, and workflow orchestration tools.
+
+The primary objective of this phase is to ensure seamless interaction between all system components while maintaining high performance, scalability, and reliability. The implementation is designed to support real-time data processing, automated workflows, and intelligent response generation.
+
+The system follows a modular design approach, where each component operates independently while maintaining proper communication with other modules. This improves maintainability and allows future enhancements without affecting the entire system.
+
+\vspace{0.5cm}
+
+\section{Overall Implementation Architecture}
+
+The system is implemented using a multi-layered architecture to ensure proper separation of concerns. Each layer is responsible for a specific set of functionalities.
+
+\textbf{[Insert System Architecture Diagram Here]}
+
+\vspace{0.3cm}
+
+\noindent \textbf{The major layers of the system include:}
+
+\begin{itemize}
+    \item \textbf{Presentation Layer:} Handles user interaction through the web interface.
+    \item \textbf{Application Layer:} Contains backend APIs and business logic.
+    \item \textbf{Data Layer:} Manages storage using PostgreSQL and Firestore.
+    \item \textbf{AI Processing Layer:} Performs classification and reply generation using AI Model.
+    \item \textbf{Automation Layer:} Executes scheduled workflows using Apache Airflow.
+\end{itemize}
+
+\vspace{0.5cm}
+
+\section{Frontend Implementation}
+
+The frontend of the system is developed using Next.js with TypeScript, providing a scalable and efficient user interface. Tailwind CSS is used to design a responsive and visually consistent layout.
+
+The dashboard allows users to connect their social media accounts, monitor selected content, view incoming comments, and manage AI-generated replies. The interface is designed using reusable components, ensuring consistency and ease of maintenance.
+
+Modern frontend techniques such as dynamic routing, asynchronous API calls, and state management are used to enhance performance and user experience. Real-time updates are supported by continuously fetching data from backend APIs.
+\\
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=14cm,height=7cm]{frontend.png}
+\caption{Client Dashboard}
+\label{fig:dashboard}
+\end{figure}
+
+\vspace{0.5cm}
+
+The user interface dashboard is shown in Fig.~\ref{fig:dashboard}, where users can monitor and manage interactions.
+\vspace{0.5cm}
+\begin{figure}[H]
+\centering
+\includegraphics[width=14cm,height=7cm]{frontend_2.png}
+\caption{Client Comment Interface}
+\label{fig:comments}
+\end{figure}
+The comment management interface is illustrated in Fig.~\ref{fig:comments}, allowing users to view and respond to comments.
+\section{Backend Implementation}
+
+The backend is implemented using Next.js API routes, which provide a server-side environment for handling application logic. These APIs act as a bridge between the frontend, databases, and external services.
+
+Prisma ORM is used for interacting with PostgreSQL, enabling type-safe and efficient database operations. The backend handles authentication, API integrations, and business logic.
+
+\vspace{0.3cm}
+
+\noindent \textbf{Key backend responsibilities include:}
+
+\begin{itemize}
+    \item Managing user authentication and sessions
+    \item Handling OAuth connections for platforms
+    \item Storing and retrieving monitored content
+    \item Communicating with the AI Model
+    \item Enforcing rate limiting and validation rules
+\end{itemize}
+
+The backend is optimized to handle multiple concurrent requests while ensuring secure data processing.
+
+\vspace{0.5cm}
+
+\section{Database Implementation}
+
+The system uses a hybrid database architecture to efficiently manage structured and unstructured data.
+
+PostgreSQL is used for storing structured data such as user accounts, platform connections, and configuration settings. It ensures data consistency and supports relational queries.
+
+Firestore is used for storing dynamic data such as comments, AI-generated replies, and reports. It supports real-time synchronization and flexible schema design.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=15cm,height=10cm]{dbSchema.png}
+\caption{PostgreSQL Database Schema}
+\label{fig:DB}
+\end{figure}
+
+
+\\
+This combination schema shown in Fig.~\ref{fig:DB} improves scalability and ensures efficient handling of high-volume data.
+
+\vspace{0.5cm}
+
+\section{Artificial Intelligence Model Integration}
+
+The AI Model plays a crucial role in analyzing comments and generating intelligent responses. It enhances the system’s ability to automate communication effectively.
+
+\vspace{0.3cm}
+
+\subsection{Comment Classification}
+
+The AI Model processes incoming comments and classifies them into different categories such as queries, complaints, spam, or general feedback. This classification helps in understanding user intent and prioritizing responses.
+
+The results are stored along with metadata, which can be used for filtering and analytics.
+
+\vspace{0.3cm}
+
+\subsection{Reply Generation}
+
+Based on the classification, the AI Model generates context-aware replies. The responses are tailored according to business context, tone preferences, and user settings.
+
+The generated replies are designed to be natural, professional, and relevant. These responses are stored in the database and can be reviewed or directly posted.
+
+\vspace{0.5cm}
+
+\section{Automation using Apache Airflow}
+
+Apache Airflow is used to automate the entire workflow of the system. It manages task execution through Directed Acyclic Graphs (DAGs).
+
+Airflow is deployed using Docker containers, ensuring consistent execution across environments.
+
+\textbf{[Insert Airflow Screenshot Here]}
+
+\vspace{0.3cm}
+
+\subsection{DAG 1: Comment Fetching}
+
+This DAG runs every 30 minutes and is responsible for fetching comments from monitored content.
+
+\begin{verbatim}
+Schedule: */30 * * * *
+\end{verbatim}
+
+It retrieves monitored data from PostgreSQL, fetches comments from APIs, and stores them in Firestore.
+
+\vspace{0.3cm}
+
+\subsection{DAG 2: Comment Processing}
+
+This DAG runs every hour and processes pending comments using the AI Model.
+
+\begin{verbatim}
+Schedule: 0 * * * *
+\end{verbatim}
+
+It performs classification and generates replies, updating the status accordingly.
+
+\vspace{0.3cm}
+
+\subsection{DAG 3: Reply Posting}
+
+This DAG runs every 15 minutes and posts replies to respective platforms.
+
+\begin{verbatim}
+Schedule: */15 * * * *
+\end{verbatim}
+
+It ensures rate limiting, token decryption, and secure API communication before posting replies.
+
+\vspace{0.5cm}
+
+\section{Workflow Execution}
+
+The system follows an automated pipeline that continuously processes data.
+
+\begin{enumerate}
+    \item User connects platform accounts
+    \item User selects content for monitoring
+    \item System fetches comments periodically
+    \item AI Model classifies comments
+    \item AI Model generates replies
+    \item System posts replies automatically
+    \item Data is stored for analytics
+\end{enumerate}
+
+
+\vspace{0.5cm}
+
+\section{Security Implementation}
+
+Security is implemented to protect sensitive data and ensure safe system operations.
+
+All tokens are encrypted using AES-256 encryption before storage. Authentication is handled securely using session-based mechanisms. API routes are protected against unauthorized access.
+
+Firestore rules restrict data access to authorized users only. Additionally, environment variables are used to securely store credentials.
+
+Rate limiting is implemented to prevent excessive API usage and ensure compliance with platform policies.
+
+\vspace{0.5cm}
+
+\section{Error Handling and Logging}
+
+The system includes robust error handling to ensure reliability. All critical operations are wrapped in exception handling mechanisms.
+
+Airflow provides detailed logs for each task, enabling monitoring and debugging. Retry mechanisms are configured to handle temporary failures.
+
+Logging is used to track system activity, helping in performance optimization and issue resolution.
+
+\vspace{0.5cm}
+
+
+
+%================ CHAPTER 7 =================%
+
+\chapter{Challenges and Limitations}
+
+\section{Introduction}
+
+During the development and implementation of the RevAI system, multiple technical and practical challenges were encountered. Since the system integrates modern web technologies, artificial intelligence models, third-party APIs, and workflow automation tools, several issues arose at different stages of development. 
+
+This chapter highlights the major challenges faced during the project, including API integration difficulties, system design constraints, performance issues, and real-world limitations. Understanding these challenges is important as it reflects the complexity of building an end-to-end intelligent automation system.
+
+\section{Challenges in Third-Party API Integration}
+
+One of the most significant challenges faced in this project was integrating third-party platforms such as Instagram, Facebook, and Reddit.
+
+\subsection{Instagram and Facebook Integration Issues}
+
+Although the system architecture and pipeline for handling Instagram and Facebook comments were successfully designed, actual integration could not be fully completed due to the following reasons:
+
+\begin{itemize}
+    \item \textbf{Strict API Permissions}: Meta (Facebook and Instagram) APIs require advanced permissions such as \texttt{instagram\_manage\_comments} and \texttt{pages\_manage\_metadata}, which are not easily granted without app review.
+    
+    \item \textbf{Business Account Requirement}: Instagram APIs only work with Business or Creator accounts linked to a Facebook page. This added additional setup complexity.
+    
+    \item \textbf{App Review Process}: Meta requires a detailed app review process, including video demonstrations and verification, which could not be completed within the project timeline.
+    
+    \item \textbf{Limited Testing Environment}: Even in development mode, only test users can access the API, limiting real-world testing.
+    
+    \item \textbf{Frequent API Changes}: Meta APIs are frequently updated, which leads to compatibility issues and breaking changes in implementation.
+\end{itemize}
+
+\subsection{Reddit Integration Challenges}
+
+Reddit integration was also attempted but faced several limitations:
+
+\begin{itemize}
+    \item \textbf{Rate Limits}: Reddit imposes strict rate limits, restricting the number of API requests within a short time.
+    
+    \item \textbf{Authentication Complexity}: OAuth implementation for Reddit requires multiple steps and proper token handling, increasing development complexity.
+    
+    \item \textbf{Limited Write Access}: Posting automated replies is restricted and requires special permissions, making automation difficult.
+    
+    \item \textbf{Inconsistent Data Structure}: Comment structures vary across threads, making parsing and processing more complex.
+\end{itemize}
+
+\section{Challenges in AI Integration}
+
+Integrating the Artificial Intelligence Model for classification and reply generation also introduced several challenges:
+
+\begin{itemize}
+    \item \textbf{API Dependency}: The system relies on external AI services, which can fail due to network issues or API downtime.
+    
+    \item \textbf{Response Latency}: Generating responses using AI introduces delay, especially when processing large batches of comments.
+    
+    \item \textbf{Prompt Engineering}: Designing effective prompts to generate meaningful and context-aware replies required multiple iterations and testing.
+    
+    \item \textbf{Inconsistent Outputs}: AI-generated responses may sometimes be irrelevant, repetitive, or not aligned with user expectations.
+    
+    \item \textbf{Cost Constraints}: Frequent API calls for classification and reply generation can increase operational cost in real-world deployment.
+\end{itemize}
+
+\section{Challenges in Workflow Automation (Airflow)}
+
+While Apache Airflow enabled automation of the pipeline, it introduced its own set of challenges:
+
+\begin{itemize}
+    \item \textbf{DAG Debugging Complexity}: Debugging DAG failures required analyzing logs and understanding task dependencies, which was time-consuming.
+    
+    \item \textbf{Environment Configuration}: Setting up Airflow using Docker required proper configuration of environment variables and services like Redis and PostgreSQL.
+    
+    \item \textbf{Task Synchronization Issues}: Ensuring smooth data flow between fetching, processing, and posting DAGs was challenging.
+    
+    \item \textbf{Handling Failures}: Proper retry mechanisms and failure handling had to be implemented to avoid data inconsistency.
+\end{itemize}
+
+\section{Database Management Challenges}
+
+The system uses both PostgreSQL and Firestore, which created certain complexities:
+
+\begin{itemize}
+    \item \textbf{Dual Database Handling}: Managing structured and unstructured data across two databases increased system complexity.
+    
+    \item \textbf{Data Synchronization}: Keeping data consistent between databases during updates was challenging.
+    
+    \item \textbf{Query Optimization}: Efficient querying of large volumes of comments required careful design.
+\end{itemize}
+
+\section{Security and Authentication Challenges}
+
+\begin{itemize}
+    \item \textbf{Token Encryption}: Securely storing and decrypting OAuth tokens required careful implementation using encryption techniques.
+    
+    \item \textbf{OAuth Errors}: Issues like redirect URI mismatch and expired tokens frequently occurred during integration.
+    
+    \item \textbf{Session Handling}: Maintaining secure user sessions across the application required proper configuration.
+\end{itemize}
+
+\section{Performance and Scalability Limitations}
+
+\begin{itemize}
+    \item \textbf{API Rate Limits}: Platforms like YouTube and Reddit limit API usage, affecting scalability.
+    
+    \item \textbf{Processing Delay}: Large volumes of comments increase processing time in the pipeline.
+    
+    \item \textbf{System Load}: Running multiple services (Airflow, database, frontend) locally requires high system resources.
+\end{itemize}
+
+\section{Development Constraints}
+
+\begin{itemize}
+    \item \textbf{Time Limitation}: The project was developed within a limited timeframe, restricting full feature implementation.
+    
+    \item \textbf{API Restrictions}: Many features depend on third-party APIs, which limited flexibility.
+    
+    \item \textbf{Testing Limitations}: Real-world testing was limited due to lack of production-level API access.
+\end{itemize}
+
+\section{Summary}
+
+The development of the RevAI system involved overcoming multiple challenges across API integration, AI processing, workflow automation, and system design. While several features were successfully implemented, certain limitations such as restricted API access, dependency on external services, and system complexity impacted the full realization of the system. These challenges provide valuable insights into building scalable and real-world AI-driven automation systems.
+
+%================ CHAPTER 8 =================%
+
+\chapter{Conclusion and Future Enhancement}
+
+\section{Conclusion}
+
+The RevAI system presents a comprehensive approach towards automating social media engagement by combining Artificial Intelligence, modern web technologies, and workflow orchestration. The system successfully demonstrates how repetitive and time-consuming tasks such as reading comments, understanding user intent, and generating responses can be automated in an efficient and scalable manner.
+
+The integration of an AI Model for classification and response generation enables the system to produce meaningful and context-aware replies, reducing the need for manual intervention. The use of Apache Airflow for scheduling and automation ensures that the entire pipeline—from fetching comments to posting replies—operates in a structured and reliable manner.
+
+The hybrid database approach using PostgreSQL and Firestore provides both consistency and flexibility, allowing the system to handle structured user data as well as high-volume unstructured comment data effectively. Additionally, features such as rate limiting, secure token handling, and customizable reply tones contribute to building a robust and user-friendly system.
+
+Despite facing challenges in integrating platforms like Instagram, Facebook, and Reddit due to strict API policies and permission constraints, the overall architecture has been designed in a modular and extensible manner. This ensures that additional platforms and features can be integrated in the future without major redesign.
+
+In conclusion, the RevAI system successfully achieves its objective of building an intelligent, automated, and scalable solution for social media interaction, highlighting the practical application of AI in real-world scenarios.
+
+\section{Future Enhancement}
+
+Although the current implementation of RevAI provides a strong working model, there is significant scope for further enhancement and expansion. The system can be evolved into a full-fledged AI-powered social media management platform by incorporating the following improvements.
+
+\subsection{Expansion to Multiple Social Media Platforms}
+
+One of the most important future directions is the full integration of additional social media platforms beyond the currently implemented ones.
+
+\begin{itemize}
+    \item \textbf{Instagram Integration}: In the future, the system can fully integrate Instagram APIs by completing the Meta App Review process and enabling required permissions. This will allow automatic monitoring and replying to comments on posts, reels, and stories, significantly increasing platform coverage.
+    
+    \item \textbf{Facebook Page Integration}: Integration with Facebook Pages can enable automated replies to comments, posts, and even direct messages. This would be highly beneficial for businesses handling customer queries.
+    
+    \item \textbf{Reddit Integration}: With improved handling of Reddit API and rate limits, the system can monitor subreddit discussions and automatically respond to user queries or feedback, expanding its usability to community-driven platforms.
+    
+    \item \textbf{Support for Emerging Platforms}: The system can also be extended to newer platforms such as Twitter (X), LinkedIn, and other content-sharing platforms, making it a universal solution.
+    
+    \item \textbf{Unified Multi-Platform Management}: A centralized dashboard can be developed where users can monitor, control, and analyze interactions across all platforms in one place.
+\end{itemize}
+
+\subsection{Enhancement of Artificial Intelligence Capabilities}
+
+The AI component of the system can be further improved to make responses more intelligent, personalized, and context-aware.
+
+\begin{itemize}
+    \item \textbf{Conversation Memory}: Future systems can maintain conversation history, enabling the AI Model to generate replies based on previous interactions, making conversations more natural and human-like.
+    
+    \item \textbf{Advanced Sentiment Analysis}: The system can be enhanced to detect complex sentiments such as sarcasm, urgency, frustration, or appreciation with higher accuracy.
+    
+    \item \textbf{Personalized Responses}: AI can be trained to adapt responses based on user preferences, brand voice, and past interactions.
+    
+    \item \textbf{Multi-Language Support}: Adding multilingual capabilities will allow the system to interact with users globally by detecting language and generating responses accordingly.
+    
+    \item \textbf{Custom Model Training}: Instead of relying only on external APIs, organizations can train domain-specific AI models for better performance and reduced dependency.
+    
+    \item \textbf{Feedback-Based Learning}: The system can improve over time by learning from user feedback such as approved or rejected replies.
+\end{itemize}
+
+\subsection{Real-Time Processing and Event-Driven Architecture}
+
+Currently, the system relies on scheduled workflows using Airflow. Future improvements can focus on real-time capabilities.
+
+\begin{itemize}
+    \item \textbf{Event-Driven Processing}: Implementing message queues (such as Kafka or RabbitMQ) can enable real-time comment processing instead of batch processing.
+    
+    \item \textbf{Instant Reply Generation}: Comments can be analyzed and responded to immediately, improving user engagement.
+    
+    \item \textbf{Live Notifications}: Users can receive instant alerts for critical or high-priority comments.
+\end{itemize}
+
+\subsection{Scalability and Cloud Deployment}
+
+To make the system production-ready, scalability improvements are essential.
+
+\begin{itemize}
+    \item \textbf{Cloud-Based Deployment}: Deploying the system on cloud platforms such as AWS, Azure, or Google Cloud will enable better scalability and reliability.
+    
+    \item \textbf{Microservices Architecture}: Splitting the system into independent services can improve maintainability and allow independent scaling.
+    
+    \item \textbf{Load Balancing}: Distributing workloads across multiple servers can handle large volumes of users efficiently.
+    
+    \item \textbf{Auto-Scaling}: Automatically adjusting resources based on demand can optimize performance and cost.
+\end{itemize}
+
+\subsection{Advanced Analytics and Reporting}
+
+The system can be extended to provide deeper insights and business intelligence.
+
+\begin{itemize}
+    \item \textbf{Detailed Analytics Dashboard}: Visual dashboards showing engagement trends, comment volume, and response effectiveness.
+    
+    \item \textbf{Sentiment Tracking}: Monitoring sentiment changes over time to understand audience behavior.
+    
+    \item \textbf{Performance Metrics}: Measuring response accuracy, engagement rate, and user satisfaction.
+    
+    \item \textbf{Automated Report Generation}: Generating periodic reports in PDF or dashboard format for business use.
+    
+    \item \textbf{Competitor Analysis}: Analyzing competitor engagement strategies to gain insights.
+\end{itemize}
+
+\subsection{Security and Reliability Improvements}
+
+Security is a critical aspect for any system handling user data and external APIs.
+
+\begin{itemize}
+    \item \textbf{Enhanced Encryption}: Stronger encryption techniques for storing sensitive tokens and user data.
+    
+    \item \textbf{Role-Based Access Control}: Different access levels for administrators, managers, and users.
+    
+    \item \textbf{Audit Logging}: Tracking all system activities for monitoring and debugging.
+    
+    \item \textbf{Secure API Handling}: Implementing stricter validation and protection against misuse.
+\end{itemize}
+
+\subsection{User Experience and Feature Enhancements}
+
+\begin{itemize}
+    \item \textbf{Mobile Application}: Development of a mobile app for easier access and real-time monitoring.
+    
+    \item \textbf{Custom Reply Templates}: Users can define multiple templates for different scenarios.
+    
+    \item \textbf{Manual Approval Workflow}: Enhanced UI for reviewing and editing AI-generated replies.
+    
+    \item \textbf{Smart Notifications}: Alerts for important comments such as complaints or urgent queries.
+    
+    \item \textbf{Voice and Chat Integration}: Integration with voice assistants or chat platforms for extended functionality.
+\end{itemize}
+
+\subsection{Automation Enhancements}
+
+\begin{itemize}
+    \item \textbf{Adaptive Scheduling}: Adjusting workflow frequency based on activity levels.
+    
+    \item \textbf{Error Recovery Systems}: Automatic handling of failures and retries.
+    
+    \item \textbf{Self-Monitoring System}: System health monitoring and alert generation.
+\end{itemize}
+
+\section{Summary}
+
+The future scope of the RevAI system is vast and promising, with opportunities to enhance platform integration, AI intelligence, scalability, and automation. By incorporating these improvements, the system can evolve into a powerful and industry-ready solution capable of managing large-scale social media interactions efficiently and intelligently.
+
+\begin{thebibliography}{99}
+
+\bibitem{ref1}
+Social Feedback Mining. (2025). Research Paper. Available at: \\
+\texttt{https://pmc.ncbi.nlm.nih.gov/articles/PMC8227369/}
+
+\bibitem{ref2}
+Semantic Analysis (ABSA). (2023). Research Paper. Available at: \\
+\texttt{https://www.researchgate.net/publication/376710770\_Systematic\_Review\_of\_Semantic\_Analysis\_Methods}
+
+\bibitem{ref3}
+Meta for Developers. (2025). Graph API Documentation. Available at: \\
+\texttt{https://developers.facebook.com/docs/graph-api}
+
+\bibitem{ref4}
+Google for Developers. (2025). YouTube Data API v3 Documentation. Available at: \\
+\texttt{https://developers.google.com/youtube/v3/docs}
+
+\bibitem{ref5}
+Apache Software Foundation. (2025). Apache Airflow Documentation. Available at: \\
+\texttt{https://airflow.apache.org/}
+
+\bibitem{ref6}
+Google AI. (2025). Gemini API Documentation. Available at: \\
+\texttt{https://ai.google.dev/docs/gemini\_api}
+
+\bibitem{ref7}
+PostgreSQL Global Development Group. (2025). PostgreSQL Documentation. Available at: \\
+\texttt{https://www.postgresql.org/docs/}
+
+\bibitem{ref8}
+Firebase, Inc. (2025). Firebase Documentation. Available at: \\
+\texttt{https://firebase.google.com/docs/}
+
+% ----------- Added Strong References -----------
+
+\bibitem{ref9}
+Goodfellow, I., Bengio, Y., \& Courville, A. (2016). \textit{Deep Learning}. MIT Press.
+
+\bibitem{ref10}
+Russell, S., \& Norvig, P. (2021). \textit{Artificial Intelligence: A Modern Approach}. Pearson.
+
+\bibitem{ref11}
+Vaswani, A., et al. (2017). \textit{Attention Is All You Need}. Advances in Neural Information Processing Systems (NeurIPS).
+
+\bibitem{ref12}
+Brown, T., et al. (2020). \textit{Language Models are Few-Shot Learners}. NeurIPS.
+
+\bibitem{ref13}
+Next.js Documentation. (2025). Available at: \\
+\texttt{https://nextjs.org/docs}
+
+\bibitem{ref14}
+Prisma ORM Documentation. (2025). Available at: \\
+\texttt{https://www.prisma.io/docs}
+
+\bibitem{ref15}
+OAuth 2.0 Authorization Framework. (2012). IETF RFC 6749. Available at: \\
+\texttt{https://datatracker.ietf.org/doc/html/rfc6749}
+
+\end{thebibliography}
+\end{document}

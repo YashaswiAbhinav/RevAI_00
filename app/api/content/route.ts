@@ -7,6 +7,8 @@ import { getYouTubeContent } from '@/lib/integrations/youtube'
 import { getInstagramContent } from '@/lib/integrations/instagram'
 import { getRedditContent, getRedditToken } from '@/lib/integrations/reddit'
 
+export const dynamic = 'force-dynamic'
+
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)

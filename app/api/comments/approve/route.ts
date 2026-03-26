@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { firestore } from '@/lib/db/firestore'
+import { isLegacyFallbackReply } from '@/lib/integrations/gemini'
+
+export const dynamic = 'force-dynamic'
 
 export async function POST(request: NextRequest) {
   try {
@@ -25,6 +28,21 @@ export async function POST(request: NextRequest) {
     const comment = commentSnapshot.data()
     if (!comment || comment.userId !== session.user.id) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
+    }
+
+    if (!comment.generatedReply?.text) {
+      return NextResponse.json({ error: 'Generate a reply before queueing it' }, { status: 400 })
+    }
+
+    if (isLegacyFallbackReply(comment.generatedReply.text)) {
+      return NextResponse.json(
+        { error: 'This reply was generated from an outdated fallback. Retry generation before queueing it.' },
+        { status: 409 }
+      )
+    }
+
+    if (comment.status === 'replied') {
+      return NextResponse.json({ error: 'Comment has already been posted' }, { status: 409 })
     }
 
     await commentRef.update({

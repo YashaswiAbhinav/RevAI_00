@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState } from 'react'
+import Image from 'next/image'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
 import {
@@ -54,6 +55,7 @@ export default function CommentsPage() {
   const [generating, setGenerating] = useState<string | null>(null)
   const [approving, setApproving] = useState<string | null>(null)
   const [selectedCommentId, setSelectedCommentId] = useState<string | null>(null)
+  const [reviewFeedback, setReviewFeedback] = useState('')
   const hasLoadedRef = useRef(false)
   const hasAutoProcessedRef = useRef(false)
   const [filters, setFilters] = useState<FilterOptions>({
@@ -63,66 +65,7 @@ export default function CommentsPage() {
     search: '',
   })
 
-  useEffect(() => {
-    if (status === 'unauthenticated') {
-      router.push('/auth/login')
-    }
-  }, [status, router])
-
-  useEffect(() => {
-    if (session?.user) {
-      const controller = new AbortController()
-      loadCommentsPageData(controller.signal)
-      return () => controller.abort()
-    }
-  }, [session, filters])
-
-  useEffect(() => {
-    if (comments.length === 0) {
-      setSelectedCommentId(null)
-      return
-    }
-
-    if (!selectedCommentId || !comments.some((comment) => comment.id === selectedCommentId)) {
-      setSelectedCommentId(comments[0].id)
-    }
-  }, [comments, selectedCommentId])
-
-  const loadCommentsPageData = async (signal?: AbortSignal) => {
-    await Promise.all([
-      fetchComments(signal),
-      loadAutomationSettings(signal),
-    ])
-  }
-
-  const loadAutomationSettings = async (signal?: AbortSignal) => {
-    try {
-      const response = await fetch('/api/settings', {
-        cache: 'no-store',
-        signal,
-      })
-
-      if (!response.ok) {
-        return
-      }
-
-      const data = await response.json()
-      const enabled = Boolean(data.settings?.autoReplyEnabled)
-      setAutoReplyEnabled(enabled)
-
-      if (enabled && !hasAutoProcessedRef.current) {
-        hasAutoProcessedRef.current = true
-        await autoProcessComments(signal)
-      }
-    } catch (error) {
-      if ((error as Error).name === 'AbortError') {
-        return
-      }
-      console.error('Failed to load automation settings:', error)
-    }
-  }
-
-  const fetchComments = async (signal?: AbortSignal) => {
+  const fetchComments = useCallback(async (signal?: AbortSignal) => {
     if (hasLoadedRef.current) {
       setRefreshing(true)
     } else {
@@ -155,9 +98,9 @@ export default function CommentsPage() {
       setLoading(false)
       setRefreshing(false)
     }
-  }
+  }, [filters])
 
-  const autoProcessComments = async (signal?: AbortSignal) => {
+  const autoProcessComments = useCallback(async (signal?: AbortSignal) => {
     setAutoProcessing(true)
     try {
       const response = await fetch('/api/comments/auto-process', {
@@ -177,9 +120,75 @@ export default function CommentsPage() {
     } finally {
       setAutoProcessing(false)
     }
-  }
+  }, [fetchComments])
 
-  const generateAIReply = async (commentId: string) => {
+  const loadAutomationSettings = useCallback(async (signal?: AbortSignal) => {
+    try {
+      const response = await fetch('/api/settings', {
+        cache: 'no-store',
+        signal,
+      })
+
+      if (!response.ok) {
+        return
+      }
+
+      const data = await response.json()
+      const enabled = Boolean(data.settings?.autoReplyEnabled)
+      setAutoReplyEnabled(enabled)
+
+      if (enabled && !hasAutoProcessedRef.current) {
+        hasAutoProcessedRef.current = true
+        await autoProcessComments(signal)
+      }
+    } catch (error) {
+      if ((error as Error).name === 'AbortError') {
+        return
+      }
+      console.error('Failed to load automation settings:', error)
+    }
+  }, [autoProcessComments])
+
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      router.push('/auth/login')
+    }
+  }, [status, router])
+
+  useEffect(() => {
+    if (session?.user) {
+      const controller = new AbortController()
+      const loadPageData = async () => {
+        await Promise.all([
+          fetchComments(controller.signal),
+          loadAutomationSettings(controller.signal),
+        ])
+      }
+
+      loadPageData()
+      return () => controller.abort()
+    }
+  }, [session, fetchComments, loadAutomationSettings])
+
+  useEffect(() => {
+    if (comments.length === 0) {
+      setSelectedCommentId(null)
+      return
+    }
+
+    if (!selectedCommentId || !comments.some((comment) => comment.id === selectedCommentId)) {
+      setSelectedCommentId(comments[0].id)
+    }
+  }, [comments, selectedCommentId])
+
+  useEffect(() => {
+    setReviewFeedback('')
+  }, [selectedCommentId])
+
+  const generateAIReply = async (
+    commentId: string,
+    options: { feedback?: string; queueAfterGeneration?: boolean } = {}
+  ) => {
     setGenerating(commentId)
     try {
       const response = await fetch('/api/comments/generate-reply', {
@@ -187,7 +196,11 @@ export default function CommentsPage() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ commentId }),
+        body: JSON.stringify({
+          commentId,
+          feedback: options.feedback || '',
+          queueAfterGeneration: options.queueAfterGeneration || false,
+        }),
       })
 
       if (response.ok) {
@@ -202,6 +215,7 @@ export default function CommentsPage() {
               }
             : comment
         ))
+        setReviewFeedback('')
       }
     } catch (error) {
       console.error('Failed to generate AI reply:', error)
@@ -450,9 +464,13 @@ export default function CommentsPage() {
                     style={{ animationDelay: `${Math.min(index * 32, 180)}ms` }}
                   >
                     {comment.authorAvatar ? (
-                      <img
+                      <Image
+                        unoptimized
+                        loader={({ src }) => src}
                         src={comment.authorAvatar}
                         alt={comment.author}
+                        width={40}
+                        height={40}
                         className="mt-0.5 h-10 w-10 rounded-2xl object-cover shadow-sm"
                       />
                     ) : (
@@ -537,10 +555,26 @@ export default function CommentsPage() {
                     No reply generated yet
                   </div>
                 )}
+
+                {(selectedComment.aiReply || selectedComment.status === 'failed') && selectedComment.status !== 'replied' && (
+                  <div className="rounded-[1.6rem] border border-slate-200/80 bg-white px-5 py-5 shadow-sm">
+                    <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+                      <RefreshCcw className="h-3.5 w-3.5" />
+                      Review
+                    </div>
+                    <textarea
+                      value={reviewFeedback}
+                      onChange={(event) => setReviewFeedback(event.target.value)}
+                      rows={3}
+                      className="rev-input mt-4"
+                      placeholder="Optional note for AI: e.g. make it shorter, warmer, less promotional, or more specific."
+                    />
+                  </div>
+                )}
               </div>
 
               <div className="mt-6 flex flex-wrap gap-3">
-                {!autoReplyEnabled && !selectedComment.aiReply && (selectedComment.status === 'pending' || selectedComment.status === 'classified') && (
+                {!selectedComment.aiReply && (selectedComment.status === 'pending' || selectedComment.status === 'classified') && (
                   <button
                     onClick={() => generateAIReply(selectedComment.id)}
                     disabled={generating === selectedComment.id}
@@ -551,7 +585,7 @@ export default function CommentsPage() {
                   </button>
                 )}
 
-                {!autoReplyEnabled && selectedComment.aiReply && (selectedComment.status === 'pending' || selectedComment.status === 'classified') && (
+                {selectedComment.aiReply && selectedComment.status === 'classified' && (
                   <>
                     <button
                       onClick={() => approveReply(selectedComment.id)}
@@ -566,16 +600,44 @@ export default function CommentsPage() {
                       className="rev-button-secondary px-4 py-2"
                     >
                       <XCircle className="h-4 w-4" />
-                      Reject
+                      Cancel
+                    </button>
+                    <button
+                      onClick={() => generateAIReply(selectedComment.id, { feedback: reviewFeedback })}
+                      disabled={generating === selectedComment.id}
+                      className="rev-button-secondary px-4 py-2 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      <RefreshCcw className={`h-4 w-4 ${generating === selectedComment.id ? 'animate-spin' : ''}`} />
+                      {generating === selectedComment.id ? 'Retrying' : 'Retry'}
                     </button>
                   </>
                 )}
 
                 {selectedComment.status === 'ready_to_post' && (
-                  <span className="inline-flex items-center gap-2 rounded-full bg-sky-50 px-4 py-2 text-sm font-medium text-sky-700">
-                    <Clock3 className="h-4 w-4" />
-                    Queued for posting
-                  </span>
+                  <>
+                    <span className="inline-flex items-center gap-2 rounded-full bg-sky-50 px-4 py-2 text-sm font-medium text-sky-700">
+                      <Clock3 className="h-4 w-4" />
+                      Queued for posting
+                    </span>
+                    <button
+                      onClick={() => rejectReply(selectedComment.id)}
+                      className="rev-button-secondary px-4 py-2"
+                    >
+                      <XCircle className="h-4 w-4" />
+                      Cancel
+                    </button>
+                    <button
+                      onClick={() => generateAIReply(selectedComment.id, {
+                        feedback: reviewFeedback,
+                        queueAfterGeneration: true,
+                      })}
+                      disabled={generating === selectedComment.id}
+                      className="rev-button-secondary px-4 py-2 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      <RefreshCcw className={`h-4 w-4 ${generating === selectedComment.id ? 'animate-spin' : ''}`} />
+                      {generating === selectedComment.id ? 'Retrying' : 'Retry'}
+                    </button>
+                  </>
                 )}
 
                 {selectedComment.status === 'replied' && (
@@ -586,21 +648,43 @@ export default function CommentsPage() {
                 )}
 
                 {selectedComment.status === 'failed' && (
-                  <button
-                    onClick={() => generateAIReply(selectedComment.id)}
-                    disabled={generating === selectedComment.id}
-                    className="rev-button-secondary px-4 py-2 disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    <RefreshCcw className={`h-4 w-4 ${generating === selectedComment.id ? 'animate-spin' : ''}`} />
-                    Retry
-                  </button>
+                  <>
+                    <button
+                      onClick={() => generateAIReply(selectedComment.id, {
+                        feedback: reviewFeedback,
+                        queueAfterGeneration: autoReplyEnabled,
+                      })}
+                      disabled={generating === selectedComment.id}
+                      className="rev-button-secondary px-4 py-2 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      <RefreshCcw className={`h-4 w-4 ${generating === selectedComment.id ? 'animate-spin' : ''}`} />
+                      {generating === selectedComment.id ? 'Retrying' : 'Retry'}
+                    </button>
+                    <button
+                      onClick={() => rejectReply(selectedComment.id)}
+                      className="rev-button-secondary px-4 py-2"
+                    >
+                      <XCircle className="h-4 w-4" />
+                      Cancel
+                    </button>
+                  </>
                 )}
 
                 {selectedComment.status === 'rejected' && (
-                  <span className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-4 py-2 text-sm font-medium text-slate-600">
-                    <AlertCircle className="h-4 w-4" />
-                    Rejected
-                  </span>
+                  <>
+                    <span className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-4 py-2 text-sm font-medium text-slate-600">
+                      <AlertCircle className="h-4 w-4" />
+                      Cancelled
+                    </span>
+                    <button
+                      onClick={() => generateAIReply(selectedComment.id, { feedback: reviewFeedback })}
+                      disabled={generating === selectedComment.id}
+                      className="rev-button-secondary px-4 py-2 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      <RefreshCcw className={`h-4 w-4 ${generating === selectedComment.id ? 'animate-spin' : ''}`} />
+                      {generating === selectedComment.id ? 'Retrying' : 'Retry'}
+                    </button>
+                  </>
                 )}
               </div>
             </div>

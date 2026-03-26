@@ -4,6 +4,8 @@ import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/db/postgres'
 import { firestore } from '@/lib/db/firestore'
 
+export const dynamic = 'force-dynamic'
+
 const ALLOWED_TONES = new Set(['professional', 'friendly', 'casual'])
 
 function parseOptionalEmail(value: unknown) {
@@ -34,8 +36,7 @@ async function setAirflowVariable(key: string, value: string): Promise<void> {
       signal: AbortSignal.timeout(3000),
     })
 
-    if (!res.ok && res.status !== 404) {
-      // Variable doesn't exist yet — create it
+    if (res.status === 404) {
       await fetch(`${airflowUrl}/api/v1/variables`, {
         method: 'POST',
         headers: {
@@ -45,6 +46,11 @@ async function setAirflowVariable(key: string, value: string): Promise<void> {
         body: JSON.stringify({ key, value }),
         signal: AbortSignal.timeout(3000),
       })
+      return
+    }
+
+    if (!res.ok) {
+      throw new Error(`Airflow variable sync failed with status ${res.status}`)
     }
   } catch (err) {
     // Airflow not reachable — log and continue, don't fail the settings save

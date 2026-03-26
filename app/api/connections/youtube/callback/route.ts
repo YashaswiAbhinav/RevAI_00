@@ -3,6 +3,8 @@ import { youtubeAPI } from '@/lib/integrations/youtube'
 import { prisma } from '@/lib/db/postgres'
 import { encryptToken } from '@/lib/security/encryption'
 
+export const dynamic = 'force-dynamic'
+
 function redirectWithError(request: NextRequest, errorCode: string) {
   return NextResponse.redirect(
     new URL(`/dashboard/connections?error=${errorCode}`, request.url)
@@ -69,7 +71,7 @@ export async function GET(request: NextRequest) {
         where: { id: existingConnection.id },
         data: {
           accessToken: encryptedAccessToken,
-          refreshToken: encryptedRefreshToken,
+          refreshToken: encryptedRefreshToken ?? existingConnection.refreshToken,
           expiresAt,
           channelId: channelInfo.id,
           channelName: channelInfo.title,

@@ -7,6 +7,29 @@ const GEMINI_MODEL_CANDIDATES = [
   'gemini-2.0-flash',
 ].filter(Boolean) as string[]
 
+const LEGACY_FALLBACK_REPLIES = new Set([
+  "Thank you for your question. We'll get back to you with more information soon.",
+  "Thanks for asking! We're looking into this and will update you shortly.",
+  "Good question! We'll check that out and get back to you.",
+  "We apologize for any inconvenience. We're working to resolve this issue.",
+  "Sorry to hear that! We're on it and will make this right.",
+  "Oops, sorry about that! We're fixing it right away.",
+  "Thank you for your kind words. We're glad you're enjoying our content.",
+  "Thanks so much! We're thrilled you like it!",
+  "Awesome, thanks! Glad you're enjoying it!",
+  "Thank you for your comment. We appreciate your engagement.",
+  "Thanks for reaching out! We love hearing from you.",
+  "Thanks for the comment! Appreciate it!",
+])
+
+export function isLegacyFallbackReply(text?: string | null): boolean {
+  if (typeof text !== 'string') {
+    return false
+  }
+
+  return LEGACY_FALLBACK_REPLIES.has(text.trim())
+}
+
 export class GeminiAPI {
   private modelName: string
 
@@ -14,22 +37,36 @@ export class GeminiAPI {
     this.modelName = modelName
   }
 
+  private async wait(ms: number) {
+    await new Promise((resolve) => setTimeout(resolve, ms))
+  }
+
   private async generateText(prompt: string): Promise<string> {
     let lastError: unknown
 
     for (const modelName of GEMINI_MODEL_CANDIDATES) {
-      try {
-        const model = genAI.getGenerativeModel({ model: modelName })
-        const result = await model.generateContent(prompt)
-        const response = await result.response
-        this.modelName = modelName
-        return response.text()
-      } catch (error) {
-        lastError = error
-        const message = String((error as Error)?.message || '')
-        const isMissingModel = message.includes('404') || message.includes('not found')
+      for (let attempt = 0; attempt < 3; attempt += 1) {
+        try {
+          const model = genAI.getGenerativeModel({ model: modelName })
+          const result = await model.generateContent(prompt)
+          const response = await result.response
+          this.modelName = modelName
+          return response.text()
+        } catch (error) {
+          lastError = error
+          const message = String((error as Error)?.message || '')
+          const isMissingModel = message.includes('404') || message.includes('not found')
+          const isRateLimited = message.includes('429') || message.toLowerCase().includes('rate limit')
 
-        if (!isMissingModel) {
+          if (isMissingModel) {
+            break
+          }
+
+          if (isRateLimited && attempt < 2) {
+            await this.wait((attempt + 1) * 2000)
+            continue
+          }
+
           throw error
         }
       }
@@ -108,18 +145,22 @@ Look for sensitive keywords like profanity, personal information, or controversi
   async generateReply(options: {
     commentText: string
     commentType: string
+    commentSentiment?: 'positive' | 'negative' | 'neutral'
     businessContext?: string
     tone: 'professional' | 'friendly' | 'casual'
     maxLength?: number
     previousReplies?: string[]
+    feedback?: string
   }): Promise<string> {
     const {
       commentText,
       commentType,
+      commentSentiment = 'neutral',
       businessContext = '',
       tone = 'professional',
       maxLength = 500,
-      previousReplies = []
+      previousReplies = [],
+      feedback = '',
     } = options
 
     const toneDescriptions = {
@@ -133,8 +174,10 @@ Generate a helpful response to this social media comment. The response should be
 
 Comment: "${commentText}"
 Comment Type: ${commentType}
+Comment Sentiment: ${commentSentiment}
 ${businessContext ? `Business Context: ${businessContext}` : ''}
 ${previousReplies.length > 0 ? `Previous Replies: ${previousReplies.join('; ')}` : ''}
+${feedback ? `Reviewer Feedback: ${feedback}` : ''}
 
 Guidelines:
 - Keep the response under ${maxLength} characters
@@ -144,8 +187,13 @@ Guidelines:
 - If it's a question, provide useful information
 - If it's a complaint, show empathy and offer solutions
 - If it's praise, express gratitude
+- If sentiment is negative, acknowledge the issue directly and avoid upbeat gratitude-only replies
+- If sentiment is positive, sound appreciative and warm without sounding canned
+- If sentiment is neutral, be specific and conversational instead of generic
 - Avoid generic responses - be specific to the comment
 - Do not include hashtags or promotional content unless directly relevant
+- Do not use generic filler like "Thanks for reaching out" unless the comment explicitly fits that phrasing
+${feedback ? '- Incorporate the reviewer feedback while keeping the reply natural and concise' : ''}
 
 Response:`
 
@@ -160,8 +208,9 @@ Response:`
       return reply
     } catch (error) {
       console.error('Gemini reply generation error:', error)
-      // Return a safe fallback response
-      return this.getFallbackReply(commentType, tone)
+      throw new Error(
+        `Gemini reply generation failed for ${commentType}/${commentSentiment}: ${String((error as Error)?.message || error)}`
+      )
     }
   }
 
@@ -240,37 +289,6 @@ Focus on:
         summary: 'Unable to generate detailed insights at this time.',
       }
     }
-  }
-
-  /**
-   * Fallback reply when AI generation fails
-   */
-  private getFallbackReply(commentType: string, tone: string): string {
-    const fallbacks = {
-      question: {
-        professional: "Thank you for your question. We'll get back to you with more information soon.",
-        friendly: "Thanks for asking! We're looking into this and will update you shortly.",
-        casual: "Good question! We'll check that out and get back to you."
-      },
-      complaint: {
-        professional: "We apologize for any inconvenience. We're working to resolve this issue.",
-        friendly: "Sorry to hear that! We're on it and will make this right.",
-        casual: "Oops, sorry about that! We're fixing it right away."
-      },
-      praise: {
-        professional: "Thank you for your kind words. We're glad you're enjoying our content.",
-        friendly: "Thanks so much! We're thrilled you like it!",
-        casual: "Awesome, thanks! Glad you're enjoying it!"
-      },
-      general: {
-        professional: "Thank you for your comment. We appreciate your engagement.",
-        friendly: "Thanks for reaching out! We love hearing from you.",
-        casual: "Thanks for the comment! Appreciate it!"
-      }
-    }
-
-    return fallbacks[commentType as keyof typeof fallbacks]?.[tone as keyof typeof fallbacks.question] ||
-           fallbacks.general.professional
   }
 
   /**

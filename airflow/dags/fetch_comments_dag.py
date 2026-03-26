@@ -11,9 +11,15 @@ from airflow.models import Variable
 import sys
 sys.path.insert(0, '/opt/airflow')
 
-# Read interval from Airflow Variable set by the settings page (default 30 min)
-_fetch_interval = int(Variable.get('revai_fetch_interval_minutes', default_var=30))
-_schedule = f'*/{_fetch_interval} * * * *' if _fetch_interval < 60 else f'0 */{_fetch_interval // 60} * * *'
+def _load_interval_minutes(variable_name: str, default_minutes: int) -> int:
+    try:
+        return max(5, int(Variable.get(variable_name, default_var=default_minutes)))
+    except (TypeError, ValueError):
+        return default_minutes
+
+
+_fetch_interval = _load_interval_minutes('revai_fetch_interval_minutes', 30)
+_schedule = timedelta(minutes=_fetch_interval)
 
 # Import helper functions
 from tasks.helpers import (

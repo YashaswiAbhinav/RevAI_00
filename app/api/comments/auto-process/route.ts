@@ -5,6 +5,8 @@ import { firestore } from '@/lib/db/firestore'
 import { prisma } from '@/lib/db/postgres'
 import { processCommentForAutomation } from '@/lib/comments/automation'
 
+export const dynamic = 'force-dynamic'
+
 const AUTO_PROCESSABLE_STATUSES = new Set(['pending', 'classified', 'failed'])
 
 export async function POST() {

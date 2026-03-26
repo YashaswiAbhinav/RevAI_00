@@ -3,6 +3,8 @@ import { instagramAPI } from '@/lib/integrations/instagram'
 import { prisma } from '@/lib/db/postgres'
 import { encryptToken } from '@/lib/security/encryption'
 
+export const dynamic = 'force-dynamic'
+
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams

@@ -4,6 +4,8 @@ import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/db/postgres'
 import { firestore } from '@/lib/db/firestore'
 
+export const dynamic = 'force-dynamic'
+
 function normalizeSentiment(value: unknown): 'positive' | 'neutral' | 'negative' | undefined {
   if (typeof value !== 'string') {
     return undefined

@@ -3,6 +3,8 @@ import { prisma } from '@/lib/db/postgres'
 import { encryptToken } from '@/lib/security/encryption'
 import { redditAPI } from '@/lib/integrations/reddit'
 
+export const dynamic = 'force-dynamic'
+
 function redirectWithError(request: NextRequest, errorCode: string) {
   return NextResponse.redirect(
     new URL(`/dashboard/connections?error=${errorCode}`, request.url)

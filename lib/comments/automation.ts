@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/db/postgres'
-import { classifyComment, geminiAPI, type CommentClassification } from '@/lib/integrations/gemini'
+import { classifyComment, geminiAPI, isLegacyFallbackReply, type CommentClassification } from '@/lib/integrations/gemini'
 
 const ACTIVE_GEMINI_MODEL =
   process.env.GEMINI_MODEL || 'gemini-2.5-flash'
@@ -8,6 +8,9 @@ type FirestoreCommentData = {
   userId?: string
   text?: string
   platform?: string
+  publishedAt?: Date | string | { toDate?: () => Date }
+  fetchedAt?: Date | string | { toDate?: () => Date }
+  updatedAt?: Date | string | { toDate?: () => Date }
   author?: {
     name?: string
   }
@@ -36,6 +39,34 @@ export type AutomationResult = {
   model?: string
 }
 
+type ProcessCommentOptions = {
+  allowDraftGeneration?: boolean
+  queueReply?: boolean
+  feedback?: string
+  forceRegeneration?: boolean
+  bypassDelay?: boolean
+}
+
+function shouldRejectAutomation(classification: CommentClassification) {
+  if (classification.type === 'spam') {
+    return {
+      reject: true,
+      reason: 'spam_detected',
+    }
+  }
+
+  if (classification.hasSensitiveKeywords) {
+    return {
+      reject: true,
+      reason: 'sensitive_keywords_detected',
+    }
+  }
+
+  return {
+    reject: false,
+  }
+}
+
 function shouldAutoQueue(options: {
   autoReplyEnabled: boolean
   minConfidenceScore: number
@@ -49,22 +80,6 @@ function shouldAutoQueue(options: {
       queue: false,
       status: 'classified' as const,
       reason: 'auto_reply_disabled',
-    }
-  }
-
-  if (classification.type === 'spam') {
-    return {
-      queue: false,
-      status: 'rejected' as const,
-      reason: 'spam_detected',
-    }
-  }
-
-  if (classification.hasSensitiveKeywords) {
-    return {
-      queue: false,
-      status: 'rejected' as const,
-      reason: 'sensitive_keywords_detected',
     }
   }
 
@@ -114,11 +129,73 @@ function normalizeTone(tone?: string | null): ReplyTone {
   return 'friendly'
 }
 
-export async function processCommentForAutomation(comment: FirestoreCommentData, userId: string): Promise<AutomationResult> {
+function coerceDate(value: FirestoreCommentData['publishedAt']): Date | null {
+  if (!value) {
+    return null
+  }
+
+  if (value instanceof Date) {
+    return Number.isNaN(value.getTime()) ? null : value
+  }
+
+  if (typeof value === 'string') {
+    const parsed = new Date(value)
+    return Number.isNaN(parsed.getTime()) ? null : parsed
+  }
+
+  if (typeof value === 'object' && typeof value.toDate === 'function') {
+    const parsed = value.toDate()
+    return Number.isNaN(parsed.getTime()) ? null : parsed
+  }
+
+  return null
+}
+
+function isReplyDelaySatisfied(comment: FirestoreCommentData, replyDelayMinutes: number) {
+  if (!replyDelayMinutes || replyDelayMinutes <= 0) {
+    return true
+  }
+
+  const referenceTime =
+    coerceDate(comment.publishedAt) ||
+    coerceDate(comment.fetchedAt) ||
+    coerceDate(comment.updatedAt)
+
+  if (!referenceTime) {
+    return true
+  }
+
+  return (Date.now() - referenceTime.getTime()) >= (replyDelayMinutes * 60 * 1000)
+}
+
+function getReusableReply(comment: FirestoreCommentData, forceRegeneration: boolean) {
+  const candidate = comment.generatedReply?.text
+
+  if (forceRegeneration || !candidate || isLegacyFallbackReply(candidate)) {
+    return null
+  }
+
+  return candidate
+}
+
+export async function processCommentForAutomation(
+  comment: FirestoreCommentData,
+  userId: string,
+  options: ProcessCommentOptions = {}
+): Promise<AutomationResult> {
+  const {
+    allowDraftGeneration = false,
+    queueReply = true,
+    feedback = '',
+    forceRegeneration = false,
+    bypassDelay = false,
+  } = options
+
   const user = await prisma.user.findUnique({
     where: { id: userId },
     select: {
       autoReplyEnabled: true,
+      replyDelay: true,
       aiTone: true,
       businessContext: true,
       replySettings: {
@@ -145,29 +222,75 @@ export async function processCommentForAutomation(comment: FirestoreCommentData,
   const replyToTypes = user.replySettings?.replyToTypes?.length
     ? user.replySettings.replyToTypes
     : ['question', 'complaint', 'praise', 'general']
+  const rejection = shouldRejectAutomation(classification)
+  const replyDelay = user.replyDelay ?? 0
+
+  if (rejection.reject) {
+    return {
+      classification,
+      status: 'rejected',
+      reason: rejection.reason,
+    }
+  }
 
   const automationDecision = shouldAutoQueue({
-    autoReplyEnabled: user.autoReplyEnabled ?? false,
+    autoReplyEnabled: queueReply && (user.autoReplyEnabled ?? false),
     minConfidenceScore,
     replyToTypes,
     classification,
   })
 
   if (!automationDecision.queue) {
+    if (!allowDraftGeneration) {
+      return {
+        classification,
+        status: automationDecision.status,
+        reason: automationDecision.reason,
+      }
+    }
+
+    const reusableReply = getReusableReply(comment, forceRegeneration)
+    const reply = reusableReply ?? await geminiAPI.generateReply({
+      commentText: comment.text || '',
+      commentType: classification.type,
+      commentSentiment: classification.sentiment,
+      businessContext: businessContext || '',
+      tone,
+      maxLength: maxReplyLength,
+      previousReplies: comment.generatedReply?.text ? [comment.generatedReply.text] : [],
+      feedback,
+    })
+
     return {
+      reply,
       classification,
-      status: automationDecision.status,
-      reason: automationDecision.reason,
+      status: 'classified',
+      model: ACTIVE_GEMINI_MODEL,
+      reason: automationDecision.reason || 'manual_review_required',
     }
   }
 
-  const reply = comment.generatedReply?.text ?? await geminiAPI.generateReply({
+  const reusableReply = getReusableReply(comment, forceRegeneration)
+  const reply = reusableReply ?? await geminiAPI.generateReply({
     commentText: comment.text || '',
     commentType: classification.type,
+    commentSentiment: classification.sentiment,
     businessContext: businessContext || '',
     tone,
     maxLength: maxReplyLength,
+    previousReplies: comment.generatedReply?.text ? [comment.generatedReply.text] : [],
+    feedback,
   })
+
+  if (!bypassDelay && !isReplyDelaySatisfied(comment, replyDelay)) {
+    return {
+      reply,
+      classification,
+      status: 'classified',
+      model: ACTIVE_GEMINI_MODEL,
+      reason: 'awaiting_reply_delay',
+    }
+  }
 
   return {
     reply,

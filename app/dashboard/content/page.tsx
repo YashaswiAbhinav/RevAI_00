@@ -1,5 +1,6 @@
 'use client'
 
+import Image from 'next/image'
 import Link from 'next/link'
 import { useEffect, useMemo, useState } from 'react'
 import { useSession } from 'next-auth/react'
@@ -331,9 +332,13 @@ export default function ContentPage() {
                     <div className="flex min-w-0 items-start gap-4">
                       <div className="shrink-0">
                         {item.thumbnailUrl ? (
-                          <img
+                          <Image
+                            unoptimized
+                            loader={({ src }) => src}
                             src={item.thumbnailUrl}
                             alt={item.title}
+                            width={160}
+                            height={112}
                             className="h-24 w-32 rounded-2xl object-cover shadow-sm sm:h-28 sm:w-40"
                           />
                         ) : (

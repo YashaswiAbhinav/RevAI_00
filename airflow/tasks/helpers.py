@@ -8,6 +8,7 @@ import json
 import base64
 import hashlib
 import re
+import time
 from urllib.parse import urlparse
 
 import firebase_admin
@@ -19,6 +20,21 @@ from Crypto.Cipher import AES
 from Crypto.Util.Padding import pad, unpad
 
 logger = logging.getLogger(__name__)
+
+LEGACY_FALLBACK_REPLIES = {
+    "Thank you for your question. We'll get back to you with more information soon.",
+    "Thanks for asking! We're looking into this and will update you shortly.",
+    "Good question! We'll check that out and get back to you.",
+    "We apologize for any inconvenience. We're working to resolve this issue.",
+    "Sorry to hear that! We're on it and will make this right.",
+    "Oops, sorry about that! We're fixing it right away.",
+    "Thank you for your kind words. We're glad you're enjoying our content.",
+    "Thanks so much! We're thrilled you like it!",
+    "Awesome, thanks! Glad you're enjoying it!",
+    "Thank you for your comment. We appreciate your engagement.",
+    "Thanks for reaching out! We love hearing from you.",
+    "Thanks for the comment! Appreciate it!",
+}
 
 
 # ===========================================
@@ -171,10 +187,18 @@ def get_user_settings(user_id: str) -> Dict[str, Any]:
         conn = get_revai_db()
         cursor = conn.cursor(cursor_factory=RealDictCursor)
         
-        cursor.execute(
-            'SELECT * FROM users WHERE id = %s',
-            [user_id]
-        )
+        cursor.execute("""
+            SELECT
+                u.*,
+                rs."businessContext" AS "replyBusinessContext",
+                rs."minConfidenceScore",
+                rs."replyToTypes",
+                rs."tone" AS "replyTone",
+                rs."maxReplyLength"
+            FROM users u
+            LEFT JOIN reply_settings rs ON rs."userId" = u.id
+            WHERE u.id = %s
+        """, [user_id])
         user = cursor.fetchone()
         cursor.close()
         conn.close()
@@ -183,11 +207,14 @@ def get_user_settings(user_id: str) -> Dict[str, Any]:
             raise ValueError(f"User {user_id} not found")
         
         return {
-            'businessContext': user.get('businessContext', ''),
-            'aiTone': user.get('aiTone', 'professional'),
+            'businessContext': user.get('replyBusinessContext') or user.get('businessContext') or '',
+            'aiTone': user.get('replyTone') or user.get('aiTone') or 'professional',
             'autoReplyEnabled': user.get('autoReplyEnabled', False),
             'maxRepliesPerHour': user.get('maxRepliesPerHour', 30),
             'replyDelay': user.get('replyDelay', 0),
+            'minConfidenceScore': float(user.get('minConfidenceScore', 0.7) or 0.7),
+            'replyToTypes': user.get('replyToTypes') or ['question', 'complaint', 'praise', 'general'],
+            'maxReplyLength': int(user.get('maxReplyLength', 300) or 300),
         }
     except Exception as e:
         logger.error(f"Failed to get user settings: {e}")
@@ -201,18 +228,58 @@ def get_rate_limit(user_id: str) -> Dict[str, Any]:
         cursor = conn.cursor(cursor_factory=RealDictCursor)
 
         cursor.execute("""
-            SELECT "repliesThisHour", "repliesToday"
+            SELECT "repliesThisHour", "repliesToday", "lastReset"
             FROM rate_limits
             WHERE "userId" = %s
         """, [user_id])
         
         result = cursor.fetchone()
+        if not result:
+            cursor.close()
+            conn.close()
+            return {
+                'repliesThisHour': 0,
+                'repliesThisDay': 0,
+            }
+
+        last_reset = result.get('lastReset')
+        now = datetime.now(last_reset.tzinfo) if last_reset and getattr(last_reset, 'tzinfo', None) else datetime.now()
+        replies_this_hour = int(result.get('repliesThisHour') or 0)
+        replies_this_day = int(result.get('repliesToday') or 0)
+
+        should_reset_hour = not last_reset or (now - last_reset) >= timedelta(hours=1)
+        should_reset_day = not last_reset or last_reset.date() != now.date()
+
+        if should_reset_day:
+            replies_this_day = 0
+        if should_reset_hour:
+            replies_this_hour = 0
+
+        if should_reset_day or should_reset_hour:
+            reset_time = now
+            cursor.execute("""
+                UPDATE rate_limits
+                SET
+                    "repliesToday" = %s,
+                    "repliesThisHour" = %s,
+                    "lastReset" = %s,
+                    "updatedAt" = %s
+                WHERE "userId" = %s
+            """, [
+                replies_this_day,
+                replies_this_hour,
+                reset_time,
+                reset_time,
+                user_id,
+            ])
+            conn.commit()
+
         cursor.close()
         conn.close()
         
         return {
-            'repliesThisHour': result.get('repliesThisHour', 0) if result else 0,
-            'repliesThisDay': result.get('repliesToday', 0) if result else 0,
+            'repliesThisHour': replies_this_hour,
+            'repliesThisDay': replies_this_day,
         }
     except Exception as e:
         logger.error(f"Failed to get rate limit: {e}")
@@ -327,6 +394,72 @@ def update_comment_status(doc_ref, status: str, extra_data: Dict[str, Any] = Non
         raise
 
 
+def evaluate_reply_action(classification: Dict[str, Any], user_settings: Dict[str, Any]) -> Dict[str, str]:
+    """Decide whether a reply should be queued, kept for manual review, or rejected."""
+    comment_type = classification.get('type', 'general')
+    confidence = int(classification.get('confidence', 50) or 50)
+    min_confidence = float(user_settings.get('minConfidenceScore', 0.7) or 0.7) * 100
+    reply_to_types = user_settings.get('replyToTypes') or ['question', 'complaint', 'praise', 'general']
+
+    if comment_type == 'spam':
+        return {'status': 'rejected', 'reason': 'spam_detected'}
+
+    if classification.get('hasSensitiveKeywords'):
+        return {'status': 'rejected', 'reason': 'sensitive_keywords_detected'}
+
+    if not user_settings.get('autoReplyEnabled'):
+        return {'status': 'classified', 'reason': 'manual_review_required'}
+
+    if comment_type not in reply_to_types:
+        return {'status': 'rejected', 'reason': 'reply_type_not_allowed'}
+
+    if confidence < min_confidence:
+        return {'status': 'rejected', 'reason': 'confidence_below_threshold'}
+
+    return {'status': 'ready_to_post', 'reason': 'queued_automatically'}
+
+
+def is_legacy_fallback_reply(text: Any) -> bool:
+    """Detect old canned fallback replies that should never be posted."""
+    if not isinstance(text, str):
+        return False
+
+    return text.strip() in LEGACY_FALLBACK_REPLIES
+
+
+def _coerce_datetime(value: Any) -> Optional[datetime]:
+    if isinstance(value, datetime):
+        return value
+
+    if isinstance(value, str):
+        normalized = value.replace('Z', '+00:00')
+        try:
+            return datetime.fromisoformat(normalized)
+        except ValueError:
+            return None
+
+    return None
+
+
+def is_reply_delay_satisfied(comment: Dict[str, Any], reply_delay_minutes: int) -> bool:
+    """Check whether a comment has waited long enough to be posted."""
+    if reply_delay_minutes <= 0:
+        return True
+
+    base_time = (
+        _coerce_datetime(comment.get('publishedAt')) or
+        _coerce_datetime(comment.get('createdAt')) or
+        _coerce_datetime(comment.get('fetchedAt')) or
+        _coerce_datetime(comment.get('updatedAt'))
+    )
+
+    if not base_time:
+        return True
+
+    now = datetime.now(base_time.tzinfo) if getattr(base_time, 'tzinfo', None) else datetime.now()
+    return now >= base_time + timedelta(minutes=reply_delay_minutes)
+
+
 # ===========================================
 # API HELPERS
 # ===========================================
@@ -363,6 +496,28 @@ def refresh_reddit_access_token(refresh_token: str) -> Dict[str, Any]:
         data={
             'grant_type': 'refresh_token',
             'refresh_token': refresh_token,
+        },
+        timeout=30,
+    )
+    response.raise_for_status()
+    return response.json()
+
+
+def refresh_youtube_access_token(refresh_token: str) -> Dict[str, Any]:
+    """Refresh a YouTube access token using the stored refresh token."""
+    client_id = os.getenv('GOOGLE_CLIENT_ID')
+    client_secret = os.getenv('GOOGLE_CLIENT_SECRET')
+
+    if not client_id or not client_secret:
+        raise ValueError('Google OAuth credentials are not configured')
+
+    response = requests.post(
+        'https://oauth2.googleapis.com/token',
+        data={
+            'client_id': client_id,
+            'client_secret': client_secret,
+            'refresh_token': refresh_token,
+            'grant_type': 'refresh_token',
         },
         timeout=30,
     )
@@ -408,6 +563,42 @@ def get_decrypted_token(user_id: str, platform: str) -> str:
                 refresh_token = decrypt_token(refresh_token_encrypted)
                 refreshed = refresh_reddit_access_token(refresh_token)
                 token = refreshed['access_token']
+                new_expires_at = datetime.now() + timedelta(seconds=int(refreshed.get('expires_in', 3600)))
+
+                cursor = conn.cursor()
+                cursor.execute("""
+                    UPDATE connections
+                    SET "accessToken" = %s, "expiresAt" = %s, "updatedAt" = %s
+                    WHERE id = %s
+                """, [
+                    encrypt_token(token),
+                    new_expires_at,
+                    datetime.now(),
+                    result['id'],
+                ])
+                conn.commit()
+                cursor.close()
+                cursor = None
+        elif platform.lower() == 'youtube':
+            expires_at = result.get('expiresAt')
+            refresh_token_encrypted = result.get('refreshToken')
+            should_refresh = (
+                expires_at is not None and
+                expires_at <= datetime.now() + timedelta(minutes=5)
+            )
+
+            if should_refresh:
+                if not refresh_token_encrypted:
+                    raise ValueError(
+                        f"YouTube connection for user {user_id} has expired and cannot refresh automatically. Reconnect YouTube."
+                    )
+
+                refresh_token = decrypt_token(refresh_token_encrypted)
+                refreshed = refresh_youtube_access_token(refresh_token)
+                token = refreshed.get('access_token')
+                if not token:
+                    raise ValueError(f"YouTube token refresh failed for user {user_id}")
+
                 new_expires_at = datetime.now() + timedelta(seconds=int(refreshed.get('expires_in', 3600)))
 
                 cursor = conn.cursor()
@@ -668,7 +859,14 @@ Comment: "{comment_text}"
     }
 
 
-def generate_reply_with_gemini(comment_text: str, comment_type: str, business_context: str = '', tone: str = 'friendly', max_length: int = 500) -> str:
+def generate_reply_with_gemini(
+    comment_text: str,
+    comment_type: str,
+    comment_sentiment: str = 'neutral',
+    business_context: str = '',
+    tone: str = 'friendly',
+    max_length: int = 500,
+) -> str:
     """Generate a reply using Gemini REST API."""
     prompt = f"""
 Generate a concise social media reply.
@@ -676,11 +874,23 @@ Return only the reply text.
 
 Comment: "{comment_text}"
 Comment Type: {comment_type}
+Comment Sentiment: {comment_sentiment}
 Business Context: {business_context}
 Tone: {tone}
 Maximum Length: {max_length}
+
+Guidelines:
+- Be specific to the actual comment
+- If sentiment is negative, acknowledge the problem directly and avoid cheerful canned gratitude
+- If sentiment is positive, sound appreciative and enthusiastic without being repetitive
+- If sentiment is neutral, be helpful and conversational
+- If it is a complaint, show empathy and offer a useful next step
+- If it is praise, express gratitude naturally
+- Do not use generic filler like "Thanks for reaching out" unless the comment truly fits
 """
     response_text = _generate_gemini_text(prompt).strip()
+    if is_legacy_fallback_reply(response_text):
+        raise ValueError('Legacy fallback reply detected; regeneration required')
     if len(response_text) > max_length:
         return response_text[:max_length - 3] + '...'
     return response_text
@@ -699,31 +909,37 @@ def _generate_gemini_text(prompt: str) -> str:
 
     last_error = None
     for model in [candidate for candidate in model_candidates if candidate]:
-        response = requests.post(
-            f'https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}',
-            headers={'Content-Type': 'application/json'},
-            json={
-                'contents': [
-                    {
-                        'parts': [{'text': prompt}]
-                    }
-                ]
-            },
-            timeout=60,
-        )
+        for attempt in range(3):
+            response = requests.post(
+                f'https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}',
+                headers={'Content-Type': 'application/json'},
+                json={
+                    'contents': [
+                        {
+                            'parts': [{'text': prompt}]
+                        }
+                    ]
+                },
+                timeout=60,
+            )
 
-        if response.status_code == 404:
-            last_error = ValueError(f'Model {model} is not available for generateContent')
-            continue
+            if response.status_code == 404:
+                last_error = ValueError(f'Model {model} is not available for generateContent')
+                break
 
-        response.raise_for_status()
-        data = response.json()
-        candidates = data.get('candidates', [])
-        if not candidates:
-            raise ValueError('Gemini returned no candidates')
+            if response.status_code == 429 and attempt < 2:
+                last_error = ValueError(f'Gemini rate limited model {model}')
+                time.sleep((attempt + 1) * 2)
+                continue
 
-        parts = candidates[0].get('content', {}).get('parts', [])
-        return ''.join(part.get('text', '') for part in parts).strip()
+            response.raise_for_status()
+            data = response.json()
+            candidates = data.get('candidates', [])
+            if not candidates:
+                raise ValueError('Gemini returned no candidates')
+
+            parts = candidates[0].get('content', {}).get('parts', [])
+            return ''.join(part.get('text', '') for part in parts).strip()
 
     raise last_error or ValueError('No supported Gemini model succeeded')
 

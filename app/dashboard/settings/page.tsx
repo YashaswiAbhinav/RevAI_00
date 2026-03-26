@@ -215,7 +215,7 @@ export default function SettingsPage() {
                     <div>
                       <p className="text-sm font-semibold">Automatic replies</p>
                       <p className="mt-1 text-sm text-slate-300">
-                        When enabled, eligible comments are generated and queued without manual approval.
+                        When enabled, eligible comments are generated and queued automatically, but can still be reviewed, retried, or cancelled from the comments inbox before posting.
                       </p>
                     </div>
                     <button

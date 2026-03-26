@@ -13,17 +13,25 @@ from airflow.models import Variable
 import sys
 sys.path.insert(0, '/opt/airflow')
 
-# Read interval from Airflow Variable set by the settings page (default 15 min)
-_post_interval = int(Variable.get('revai_post_interval_minutes', default_var=15))
-_schedule = f'*/{_post_interval} * * * *' if _post_interval < 60 else f'0 */{_post_interval // 60} * * *'
+def _load_interval_minutes(variable_name: str, default_minutes: int) -> int:
+    try:
+        return max(5, int(Variable.get(variable_name, default_var=default_minutes)))
+    except (TypeError, ValueError):
+        return default_minutes
+
+
+_post_interval = _load_interval_minutes('revai_post_interval_minutes', 15)
+_schedule = timedelta(minutes=_post_interval)
 
 # Import helper functions
 from tasks.helpers import (
     get_ready_to_post_comments,
     get_rate_limit,
+    get_user_settings,
     get_decrypted_token,
     update_comment_status,
     increment_rate_limit,
+    is_legacy_fallback_reply,
     post_youtube_reply,
     post_reddit_reply,
     post_instagram_reply,
@@ -71,19 +79,39 @@ def task_post_to_youtube(**context):
         
         posted_count = 0
         failed_count = 0
+        settings_cache = {}
         
         for comment in ready_comments:
             try:
                 user_id = comment['userId']
                 platform_comment_id = comment['platformCommentId']
-                reply_text = comment['generatedReply']['text']
+                reply_text = (comment.get('generatedReply') or {}).get('text')
+                if not reply_text:
+                    raise ValueError('Generated reply text is missing')
+                if is_legacy_fallback_reply(reply_text):
+                    update_comment_status(
+                        comment['_doc_ref'],
+                        'classified',
+                        {
+                            'automation': {
+                                'decision': 'legacy_fallback_reply_detected',
+                                'processedAt': datetime.now(),
+                            }
+                        }
+                    )
+                    logger.warning(f"Legacy fallback reply detected for YouTube comment {platform_comment_id}; sending back for regeneration")
+                    continue
+                user_settings = settings_cache.get(user_id)
+                if not user_settings:
+                    user_settings = get_user_settings(user_id)
+                    settings_cache[user_id] = user_settings
                 
                 # Check rate limit
                 rate_limit = get_rate_limit(user_id)
-                if rate_limit['repliesThisHour'] >= 30:
+                if rate_limit['repliesThisHour'] >= user_settings.get('maxRepliesPerHour', 30):
                     logger.warning(f"User {user_id} hit hourly rate limit, skipping")
                     continue
-                
+
                 token = get_decrypted_token(user_id, 'youtube')
                 logger.info(f"Posting reply to YouTube comment {platform_comment_id}")
                 result = post_youtube_reply(token, platform_comment_id, reply_text)
@@ -152,18 +180,38 @@ def task_post_to_reddit(**context):
         
         posted_count = 0
         failed_count = 0
+        settings_cache = {}
         
         for comment in ready_comments:
             try:
                 user_id = comment['userId']
                 platform_comment_id = comment['platformCommentId']
-                reply_text = comment['generatedReply']['text']
+                reply_text = (comment.get('generatedReply') or {}).get('text')
+                if not reply_text:
+                    raise ValueError('Generated reply text is missing')
+                if is_legacy_fallback_reply(reply_text):
+                    update_comment_status(
+                        comment['_doc_ref'],
+                        'classified',
+                        {
+                            'automation': {
+                                'decision': 'legacy_fallback_reply_detected',
+                                'processedAt': datetime.now(),
+                            }
+                        }
+                    )
+                    logger.warning(f"Legacy fallback reply detected for Reddit comment {platform_comment_id}; sending back for regeneration")
+                    continue
+                user_settings = settings_cache.get(user_id)
+                if not user_settings:
+                    user_settings = get_user_settings(user_id)
+                    settings_cache[user_id] = user_settings
                 
                 rate_limit = get_rate_limit(user_id)
-                if rate_limit['repliesThisHour'] >= 30:
+                if rate_limit['repliesThisHour'] >= user_settings.get('maxRepliesPerHour', 30):
                     logger.warning(f"User {user_id} hit hourly rate limit, skipping")
                     continue
-                
+
                 token = get_decrypted_token(user_id, 'reddit')
                 logger.info(f"Posting reply to Reddit comment {platform_comment_id}")
                 result = post_reddit_reply(token, platform_comment_id, reply_text)
@@ -229,19 +277,39 @@ def task_post_to_instagram(**context):
         
         posted_count = 0
         failed_count = 0
+        settings_cache = {}
         
         for comment in ready_comments:
             try:
                 user_id = comment['userId']
                 platform_comment_id = comment['platformCommentId']
-                reply_text = comment['generatedReply']['text']
+                reply_text = (comment.get('generatedReply') or {}).get('text')
+                if not reply_text:
+                    raise ValueError('Generated reply text is missing')
+                if is_legacy_fallback_reply(reply_text):
+                    update_comment_status(
+                        comment['_doc_ref'],
+                        'classified',
+                        {
+                            'automation': {
+                                'decision': 'legacy_fallback_reply_detected',
+                                'processedAt': datetime.now(),
+                            }
+                        }
+                    )
+                    logger.warning(f"Legacy fallback reply detected for Instagram comment {platform_comment_id}; sending back for regeneration")
+                    continue
+                user_settings = settings_cache.get(user_id)
+                if not user_settings:
+                    user_settings = get_user_settings(user_id)
+                    settings_cache[user_id] = user_settings
                 
                 # Check rate limit
                 rate_limit = get_rate_limit(user_id)
-                if rate_limit['repliesThisHour'] >= 30:
+                if rate_limit['repliesThisHour'] >= user_settings.get('maxRepliesPerHour', 30):
                     logger.warning(f"User {user_id} hit hourly rate limit, skipping")
                     continue
-                
+
                 token = get_decrypted_token(user_id, 'instagram')
                 logger.info(f"Posting reply to Instagram comment {platform_comment_id}")
                 result = post_instagram_reply(token, platform_comment_id, reply_text)

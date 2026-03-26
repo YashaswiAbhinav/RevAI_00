@@ -2,7 +2,7 @@
 
 ## 📊 Current Status: PHASE 8 UI/UX POLISH IN PROGRESS
 
-**Last Updated**: 2026-03-24
+**Last Updated**: 2026-03-26
 **Phase**: Phase 8: UI/UX Polish (In Progress)
 **Completion**: 96%
 
@@ -162,6 +162,37 @@
 ---
 
 ## 📝 Notes & Decisions
+
+### 2026-03-26 — Reply generation and posting workflow hardened for production
+
+- **Root Cause 1**: `lib/integrations/gemini.ts` swallowed Gemini reply-generation failures and returned hardcoded fallback text such as `Thanks for reaching out! We love hearing from you.`
+- **Root Cause 2**: Legacy fallback replies were already stored in Firestore and could continue moving through the queue as if they were valid AI output.
+- **Root Cause 3**: Gemini bursts during regeneration hit `429 Too Many Requests`, leaving some comments stuck in `classified`.
+- **Root Cause 4**: Airflow reply-delay logic used `fetchedAt` before `publishedAt`, so refetched comments could have their delay window unintentionally reset.
+- **Fixes Applied**:
+  - Removed hardcoded reply fallback behavior from `lib/integrations/gemini.ts`; reply generation now throws real errors instead of storing canned text.
+  - Added sentiment-aware prompt guidance so negative, positive, and neutral comments are answered differently.
+  - Added legacy fallback detection in app and Airflow code paths so canned replies are not reused, approved, or posted.
+  - Added Gemini retry/backoff handling in both the Next.js integration and the Airflow helper path.
+  - Corrected reply-delay timestamp precedence to use the original comment publish time before fetch/update timestamps.
+  - Reclassified all unposted comments containing the old canned fallback and re-ran `process_replies_dag` to regenerate them.
+- **Live Outcome**:
+  - Found 23 comments with the exact legacy fallback reply; 11 of them were still unposted.
+  - Reclassified those 11 comments out of `ready_to_post`, regenerated them, and verified there are now `0` unposted comments left carrying that fallback text.
+  - Verified a live `post_replies_dag` run posted 10 YouTube replies successfully before the configured hourly cap stopped further posting.
+  - After the final regeneration pass, the active user’s queue moved to `12 ready_to_post` comments with regenerated replies.
+- **Files Changed**:
+  - `lib/integrations/gemini.ts`
+  - `lib/comments/automation.ts`
+  - `app/api/comments/approve/route.ts`
+  - `airflow/tasks/helpers.py`
+  - `airflow/dags/process_replies_dag.py`
+  - `airflow/dags/post_replies_dag.py`
+- **Validation**:
+  - `npm run type-check`
+  - `npm run build`
+  - `python3 -m compileall airflow`
+  - Live Airflow manual runs for `process_replies_dag` and `post_replies_dag`
 
 ### 2026-03-25 — Reddit integrated as the second active platform workflow
 

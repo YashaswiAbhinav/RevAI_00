@@ -110,7 +110,30 @@ export default function ReportsPage() {
 
   useEffect(() => {
     if (session?.user) {
-      fetchReports()
+      const loadReports = async () => {
+        setLoading(true)
+
+        try {
+          const response = await fetch(`/api/reports?timeRange=${timeRange}`, {
+            cache: 'no-store',
+          })
+
+          if (!response.ok) {
+            setReportData(null)
+            return
+          }
+
+          const data = await response.json()
+          setReportData(data)
+        } catch (fetchError) {
+          console.error('Failed to fetch reports:', fetchError)
+          setReportData(null)
+        } finally {
+          setLoading(false)
+        }
+      }
+
+      loadReports()
     }
   }, [session, timeRange])
 
@@ -118,29 +141,6 @@ export default function ReportsPage() {
     setSelectedCommentIndex(0)
     setSelectedDayIndex(0)
   }, [reportData])
-
-  const fetchReports = async () => {
-    setLoading(true)
-
-    try {
-      const response = await fetch(`/api/reports?timeRange=${timeRange}`, {
-        cache: 'no-store',
-      })
-
-      if (!response.ok) {
-        setReportData(null)
-        return
-      }
-
-      const data = await response.json()
-      setReportData(data)
-    } catch (fetchError) {
-      console.error('Failed to fetch reports:', fetchError)
-      setReportData(null)
-    } finally {
-      setLoading(false)
-    }
-  }
 
   const selectedComment = reportData?.recentComments?.[selectedCommentIndex] ?? null
   const selectedDay = reportData?.recentActivity?.[selectedDayIndex] ?? null

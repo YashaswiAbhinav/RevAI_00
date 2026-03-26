@@ -6,6 +6,8 @@ import { youtubeAPI, getYouTubeToken } from '@/lib/integrations/youtube'
 import { instagramAPI, getInstagramToken } from '@/lib/integrations/instagram'
 import { redditAPI, getRedditToken } from '@/lib/integrations/reddit'
 
+export const dynamic = 'force-dynamic'
+
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
@@ -28,13 +30,19 @@ export async function GET(request: NextRequest) {
         let status = 'connected'
         let permissions = { canReadComments: false, canPostReplies: false }
         let errors: string[] = []
+        let effectiveExpiresAt = connection.expiresAt
 
         try {
           if (connection.platform === 'YOUTUBE') {
-            const { accessToken } = await getYouTubeToken(session.user.id)
+            const { accessToken, expiresAt } = await getYouTubeToken(session.user.id)
             const result = await youtubeAPI.checkPermissions(accessToken)
             permissions = result
             errors = result.errors
+            effectiveExpiresAt = expiresAt ?? connection.expiresAt
+
+            if (!connection.refreshToken) {
+              errors.push('Reconnect YouTube once to grant offline access for background fetching and posting.')
+            }
           } else if (connection.platform === 'REDDIT') {
             const { accessToken } = await getRedditToken(session.user.id)
             const result = await redditAPI.checkPermissions(accessToken, connection.channelId || undefined)
@@ -48,7 +56,7 @@ export async function GET(request: NextRequest) {
           }
 
           // Check if token is expired
-          if (connection.expiresAt && connection.expiresAt < new Date()) {
+          if (effectiveExpiresAt && effectiveExpiresAt < new Date()) {
             status = 'expired'
           }
         } catch (error: any) {
